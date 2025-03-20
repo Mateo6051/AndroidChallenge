@@ -1,4 +1,4 @@
-package com.ut3.GoForIt;
+package com.example.goforit;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.ut3.GoForIt", appContext.getPackageName());
+        assertEquals("com.example.goforit", appContext.getPackageName());
     }
 }

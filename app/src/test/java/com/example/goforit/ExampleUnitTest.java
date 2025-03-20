@@ -1,4 +1,4 @@
-package com.ut3.GoForIt;
+package com.example.goforit;
 
 import org.junit.Test;
 

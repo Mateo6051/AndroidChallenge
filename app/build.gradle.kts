@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.ut3.GoForIt"
-    compileSdk = 34
+    namespace = "com.example.goforit"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.ut3.GoForIt"
+        applicationId = "com.example.goforit"
         minSdk = 27
         targetSdk = 34
         versionCode = 1
