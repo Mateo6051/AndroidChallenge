@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        setContentView(new GameView(this));
+
 
         SharedPreferences sharedPref =
                 this.getPreferences(Context.MODE_PRIVATE);
@@ -32,6 +32,7 @@ public class MainActivity extends Activity {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt("valeur_y", valeur_y);
         editor.apply();
+        setContentView(new GameView(this, valeur_y));
 
     }
 

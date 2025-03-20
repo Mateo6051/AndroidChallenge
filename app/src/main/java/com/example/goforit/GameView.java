@@ -17,8 +17,9 @@ public class GameView extends SurfaceView implements
     private int valeur_y;
 
 
-    public GameView(Context context) {
+    public GameView(Context context, int valeur_y) {
         super(context);
+        this.valeur_y = valeur_y; // Initialize with value from MainActivity
         getHolder().addCallback(this);
         thread = new GameThread(getHolder(), this);
         setFocusable(true);
@@ -60,7 +61,7 @@ public class GameView extends SurfaceView implements
             canvas.drawColor(Color.WHITE);
             Paint paint = new Paint();
             paint.setColor(Color.rgb(250, 0, 0));
-            canvas.drawRect(x, 100, x+100, 200, paint);
+            canvas.drawRect(x, valeur_y, x + 100, valeur_y + 100, paint); // Use valeur_y
         }
     }
 
