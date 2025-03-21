@@ -124,6 +124,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
         playerX = nextX;
         playerY = nextY;
+
+        rotationAngle += 90;
+        if (rotationAngle >= 360) {
+            rotationAngle = 0;
+        }
     }
 
 
