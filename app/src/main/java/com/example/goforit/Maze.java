@@ -194,6 +194,16 @@ public class Maze {
     public Point getStart() {
         return start;
     }
+    
+
+    /**
+     * Récupère le point d'arrivée du labyrinthe
+     * @return Le point représentant la sortie
+     */
+    public Point getGoal() {
+        return goal;
+    }
+    
     public int getSize() {
         return size;
     }
