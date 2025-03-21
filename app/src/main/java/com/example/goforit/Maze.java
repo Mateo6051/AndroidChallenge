@@ -34,6 +34,7 @@ public class Maze {
 
             int directionChanges = 0;
             Point prevDirection = null;
+            boolean invalidPath = false;
 
             while (directionChanges < maxDirectionChanges) {
                 List<int[]> possibleDirs = new ArrayList<>(Arrays.asList(
@@ -44,7 +45,7 @@ public class Maze {
 
                 for (int[] dir : possibleDirs) {
                     if (prevDirection != null && dir[0] == -prevDirection.x && dir[1] == -prevDirection.y) {
-                        continue; // Empêcher le retour en arrière
+                        continue;
                     }
 
                     int dx = dir[0];
@@ -68,10 +69,19 @@ public class Maze {
                     if (valid) {
                         path.addAll(segment);
                         current = segment.get(segment.size() - 1);
-                        if (current.x + dx >= 0 && current.x + dx < size + 2 &&
-                                current.y + dy >= 0 && current.y + dy < size + 2) {
-                            obstacles[current.x + dx][current.y + dy] = true;
+
+                        Point obstaclePoint = new Point(current.x + dx, current.y + dy);
+                        if (obstaclePoint.x > 0 && obstaclePoint.x < size + 1 &&
+                                obstaclePoint.y > 0 && obstaclePoint.y < size + 1) {
+
+                            if (path.contains(obstaclePoint)) {
+                                invalidPath = true;
+                                break;
+                            } else {
+                                obstacles[obstaclePoint.x][obstaclePoint.y] = true;
+                            }
                         }
+
                         moved = true;
                         prevDirection = new Point(dx, dy);
                         directionChanges++;
@@ -79,16 +89,17 @@ public class Maze {
                     }
                 }
 
+                if (invalidPath) break;
                 if (!moved) break;
             }
 
-            if (directionChanges < maxDirectionChanges) continue; // Recommencer
+            if (invalidPath || directionChanges < maxDirectionChanges) continue;
 
             placeExit(current, prevDirection);
+            placeExtraObstacles();
             break;
         }
     }
-
 
     private int getMaxDistance(Point current, int dx, int dy) {
         int distance = 0;
@@ -107,35 +118,66 @@ public class Maze {
     private void placeExit(Point lastPoint, Point lastDirection) {
         List<Point> possibleExits = new ArrayList<>();
         int[][] dirs = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+        Random rand = new Random();
+
+        Point chosenExit = null;
+        List<Point> exitPath = new ArrayList<>();
 
         for (int[] dir : dirs) {
             if (dir[0] == -lastDirection.x && dir[1] == -lastDirection.y) {
-                continue; // Éviter de revenir en arrière pour la sortie
+                continue;
             }
 
             int dx = dir[0];
             int dy = dir[1];
             Point check = new Point(lastPoint.x, lastPoint.y);
-            boolean clear = true;
+            List<Point> tempPath = new ArrayList<>();
 
             while (check.x > 0 && check.x < size + 1 && check.y > 0 && check.y < size + 1) {
-                if (obstacles[check.x][check.y]) {
-                    clear = false;
-                    break;
-                }
                 check = new Point(check.x + dx, check.y + dy);
+                if (obstacles[check.x][check.y]) break;
+                tempPath.add(new Point(check.x, check.y));
             }
 
-            if (clear && (check.x == 0 || check.x == size + 1 || check.y == 0 || check.y == size + 1) && !(check.x == 1 && (check.y == 1 || check.y == size)) && !(check.x == size && (check.y == 1 || check.y == size)) && !(check.y == 1 && (check.x == 1 || check.x == size)) && !(check.y == size && (check.x == 1 || check.x == size))) {
+            if ((check.x == 0 || check.x == size + 1 || check.y == 0 || check.y == size + 1) &&
+                    !(check.x == 1 && (check.y == 1 || check.y == size)) &&
+                    !(check.x == size && (check.y == 1 || check.y == size)) &&
+                    !(check.y == 1 && (check.x == 1 || check.x == size)) &&
+                    !(check.y == size && (check.x == 1 || check.x == size))) {
+
                 possibleExits.add(check);
+
+                if (chosenExit == null || rand.nextBoolean()) {
+                    chosenExit = check;
+                    exitPath = new ArrayList<>(tempPath);
+                }
             }
         }
 
-        if (!possibleExits.isEmpty()) {
-            goal = possibleExits.get(new Random().nextInt(possibleExits.size()));
+        if (chosenExit != null) {
+            goal = chosenExit;
             obstacles[goal.x][goal.y] = false;
+            path.addAll(exitPath);
+        } else {
+            System.out.println(" Aucune sortie valide trouvée, re-génération nécessaire !");
         }
     }
+
+    private void placeExtraObstacles() {
+        Random rand = new Random();
+        int obstacleCount = (size * size) / 5;
+
+        for (int i = 0; i < obstacleCount; i++) {
+            int x, y;
+            do {
+                x = rand.nextInt(size) + 1;
+                y = rand.nextInt(size) + 1;
+            } while (path.contains(new Point(x, y)) || obstacles[x][y]);
+
+            obstacles[x][y] = true;
+        }
+    }
+
 
     public boolean isPartOfPath(int x, int y) {
         return path.contains(new Point(x, y)) && !isObstacle(x, y);
@@ -156,6 +198,23 @@ public class Maze {
     public Point getStart() {
         return start;
     }
+    
+    /**
+     * Récupère le chemin complet du labyrinthe
+     * @return L'ensemble des points formant le chemin
+     */
+    public Set<Point> getPath() {
+        return path;
+    }
+    
+    /**
+     * Récupère le point d'arrivée du labyrinthe
+     * @return Le point représentant la sortie
+     */
+    public Point getGoal() {
+        return goal;
+    }
+    
     public int getSize() {
         return size;
     }
