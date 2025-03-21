@@ -24,8 +24,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private static final int SWIPE_THRESHOLD = 50; // Distance minimale pour valider un swipe
 
     // Contrôle de la vitesse
-    private int moveCounter = 0; // Compteur pour ralentir le déplacement
-    private static final int MOVE_DELAY = 5; // Plus cette valeur est grande, plus le déplacement est lent
+    private int moveCounter = 0;
+    private static final int MOVE_DELAY = 5;
+
+    // Taille dynamique des cases
+    private int cellSize; // Taille d'une case en pixels, calculée selon l'écran
 
     // Enum pour les directions
     private enum Direction {
@@ -43,6 +46,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         obstacles[3][4] = true; // Obstacle en (3,4)
         obstacles[7][8] = true; // Obstacle en (7,8)
         obstacles[9][9] = true;
+
+        // Calculer la taille des cases en fonction de la taille de l'écran
+        calculateCellSize();
+    }
+
+    // Calculer la taille des cases pour remplir presque tout l'écran
+    private void calculateCellSize() {
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        // Utiliser la plus petite dimension (largeur ou hauteur) pour une grille carrée
+        cellSize = Math.min(screenWidth, screenHeight) / 10; // 10 cases
     }
 
     @Override
@@ -73,7 +87,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (direction != Direction.STOPPED) {
-            return true; // Ignore les swipes pendant le mouvement
+            return true;
         }
 
         switch (event.getAction()) {
@@ -111,17 +125,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // Logique de déplacement et détection des obstacles
     public void update() {
         if (direction == Direction.STOPPED) {
-            return; // Pas de mouvement si arrêté
+            return;
         }
 
-        // Ralentir le déplacement avec un compteur
         moveCounter++;
         if (moveCounter < MOVE_DELAY) {
-            return; // Ne bouge pas encore
+            return;
         }
-        moveCounter = 0; // Réinitialiser le compteur après un déplacement
+        moveCounter = 0;
 
-        // Mouvement continu dans la direction actuelle
         int nextX = playerX;
         int nextY = playerY;
 
@@ -140,24 +152,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 break;
         }
 
-        // Vérification des limites de la grille (0-9)
         if (nextX < 0 || nextX >= 10 || nextY < 0 || nextY >= 10) {
-            direction = Direction.STOPPED; // Arrêt si hors grille
+            direction = Direction.STOPPED;
             return;
         }
 
-        // Vérification des obstacles
         if (obstacles[nextX][nextY]) {
-            direction = Direction.STOPPED; // Arrêt si collision
+            direction = Direction.STOPPED;
             return;
         }
 
-        // Mise à jour de la position si aucun obstacle ou bord
         playerX = nextX;
         playerY = nextY;
     }
 
-    // Affichage (laissé pour les autres membres)
+    // Affichage adapté à la taille de l'écran
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
@@ -166,17 +175,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             Paint paint = new Paint();
             paint.setColor(Color.rgb(250, 0, 0));
 
-            // Dessiner le joueur
-            int pixelX = playerX * 40;
-            int pixelY = playerY * 40;
-            canvas.drawRect(pixelX, pixelY, pixelX + 40, pixelY + 40, paint);
+            // Dessiner le joueur avec la taille dynamique
+            int pixelX = playerX * cellSize;
+            int pixelY = playerY * cellSize;
+            canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
 
             // Dessiner les obstacles
             paint.setColor(Color.BLACK);
             for (int i = 0; i < 10; i++) {
                 for (int j = 0; j < 10; j++) {
                     if (obstacles[i][j]) {
-                        canvas.drawRect(i * 40, j * 40, i * 40 + 40, j * 40 + 40, paint);
+                        canvas.drawRect(i * cellSize, j * cellSize,
+                                i * cellSize + cellSize, j * cellSize + cellSize, paint);
                     }
                 }
             }
