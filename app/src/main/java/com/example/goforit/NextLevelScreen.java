@@ -109,8 +109,7 @@ public class NextLevelScreen extends AppCompatActivity {
         ProgressBar progressBar = findViewById(R.id.levelProgress);
         TextView progressText = findViewById(R.id.progressText);
         
-        // Calculer la progression (exemple: 10 niveaux au total)
-        int totalLevels = 10;
+        int totalLevels = 5;
         int progress = Math.min(100, (currentLevel * 100) / totalLevels);
         
         // Mettre à jour la barre et le texte

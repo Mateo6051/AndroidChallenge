@@ -102,10 +102,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         int nextY = playerY;
 
         switch (direction) {
-            case UP: nextY--; break;
-            case DOWN: nextY++; break;
-            case LEFT: nextX--; break;
-            case RIGHT: nextX++; break;
+            case UP:
+                nextY--;
+                break;
+            case DOWN:
+                nextY++;
+                break;
+            case LEFT:
+                nextX--;
+                break;
+            case RIGHT:
+                nextX++;
+                break;
         }
 
         if (nextX < 0 || nextX >= gridSize + 2 || nextY < 0 || nextY >= gridSize + 2) {
