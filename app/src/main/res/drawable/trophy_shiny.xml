@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow layer -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#40000000" />
+            <padding android:bottom="2dp" />
+        </shape>
+    </item>
+    <!-- Main trophy circle -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="100%p"
+                android:startColor="#FFFFFF"
+                android:endColor="@color/gold" />
+        </shape>
+    </item>
+    <!-- Shine effect -->
+    <item android:top="5dp" android:left="5dp" android:right="25dp" android:bottom="25dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="linear"
+                android:angle="45"
+                android:startColor="#FFFFFF"
+                android:centerColor="#80FFFFFF"
+                android:endColor="#00FFFFFF" />
+        </shape>
+    </item>
+</layer-list> 

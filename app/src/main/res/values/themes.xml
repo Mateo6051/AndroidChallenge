@@ -2,8 +2,73 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.GoForIt" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/accent_variant</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/primary_text</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorOnBackground">@color/primary_text</item>
+        <item name="android:textColorPrimary">@color/primary_text</item>
+        <item name="android:textColorSecondary">@color/secondary_text</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:navigationBarColor">@color/primary_dark</item>
+        <item name="fontFamily">@font/roboto</item>
+        <item name="android:fontFamily">@font/roboto</item>
+        <item name="elevation">4dp</item>
     </style>
 
     <style name="Theme.GoForIt" parent="Base.Theme.GoForIt" />
+
+    <style name="ButtonStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:layout_marginStart">24dp</item>
+        <item name="android:layout_marginEnd">24dp</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="elevation">4dp</item>
+        <item name="fontFamily">@font/roboto_medium</item>
+        <item name="android:fontFamily">@font/roboto_medium</item>
+    </style>
+
+    <style name="TitleTextStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/primary_text</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="fontFamily">@font/montserrat_bold</item>
+        <item name="android:fontFamily">@font/montserrat_bold</item>
+    </style>
+    
+    <style name="CardStyle">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">4dp</item>
+        <item name="contentPadding">16dp</item>
+        <item name="cardBackgroundColor">@color/surface</item>
+        <item name="android:layout_marginBottom">12dp</item>
+        <item name="android:layout_marginHorizontal">16dp</item>
+    </style>
+    
+    <style name="ProgressStyle" parent="Widget.AppCompat.ProgressBar.Horizontal">
+        <item name="android:progressBackgroundTint">@color/progress_background</item>
+        <item name="android:progressTint">@color/primary</item>
+        <item name="android:minHeight">8dp</item>
+    </style>
 </resources>

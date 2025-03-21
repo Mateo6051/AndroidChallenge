@@ -247,5 +247,4 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         canvas.drawBitmap(stoneBitmapBall, pixelX, pixelY, null);
         canvas.restore();
     }
-
 }

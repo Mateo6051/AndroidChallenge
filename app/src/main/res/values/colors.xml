@@ -2,4 +2,28 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Palette de couleurs ultra-moderne et élégante -->
+    <color name="primary">#4F46E5</color>
+    <color name="primary_dark">#3730A3</color>
+    <color name="primary_light">#818CF8</color>
+    <color name="accent">#10B981</color>
+    <color name="accent_variant">#059669</color>
+    <color name="error">#EF4444</color>
+    <color name="primary_text">#111827</color>
+    <color name="secondary_text">#6B7280</color>
+    <color name="background">#F9FAFB</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="gold">#F59E0B</color>
+    <color name="silver">#94A3B8</color>
+    <color name="bronze">#D97706</color>
+    <color name="button_gradient_start">#4338CA</color>
+    <color name="button_gradient_end">#3730A3</color>
+    <color name="success">#10B981</color>
+    <color name="card_shadow">#E2E8F0</color>
+    <color name="progress_background">#E5E7EB</color>
+    <color name="card_border">#F1F5F9</color>
+    <color name="card_highlight">#F8FAFC</color>
+    <color name="glass_effect">#CCFFFFFF</color>
+    <color name="trophy_glow">#FDE68A</color>
 </resources>

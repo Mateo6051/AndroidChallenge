@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_elegant">
+
+    <TextView
+        android:id="@+id/trophyTitle"
+        style="@style/ElegantTitleStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mes Trophées"
+        android:textSize="32sp"
+        android:gravity="center"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Carte avec effet néomorphique pour la liste de trophées -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/trophyTitle"
+        android:layout_above="@id/buttonContainer"
+        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="20dp"
+        style="@style/NeumorphicCardStyle"
+        android:background="@drawable/neumorphic_card">
+        
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/trophyRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:clipToPadding="false" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- État vide avec style moderne -->
+    <LinearLayout
+        android:id="@+id/emptyStateContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:visibility="gone">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_gravity="center"
+            style="@style/NeumorphicCardStyle"
+            android:background="@drawable/neumorphic_card"
+            android:layout_marginBottom="24dp">
+            
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/trophy_bronze"
+                    android:padding="24dp"
+                    android:alpha="0.4"
+                    android:contentDescription="Aucun trophée" />
+                    
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/trophy_elegant"
+                    android:alpha="0.2" />
+            </FrameLayout>
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            style="@style/ElegantSubtitleStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aucun trophée pour l'instant"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Terminez des niveaux pour gagner des trophées !"
+            android:textSize="16sp"
+            android:textColor="@color/secondary_text"
+            android:fontFamily="@font/roboto"
+            android:letterSpacing="0.01"
+            android:lineSpacingMultiplier="1.2"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"/>
+            
+        <Button
+            android:id="@+id/btnStartPlaying"
+            style="@style/ElegantButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Commencer à jouer"
+            android:layout_gravity="center"
+            android:paddingHorizontal="24dp" />
+    </LinearLayout>
+
+    <!-- Bouton avec effet élégant -->
+    <FrameLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="20dp">
+
+        <Button
+            android:id="@+id/btnReturnToMenu"
+            style="@style/ElegantButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Retour au menu" />
+    </FrameLayout>
+
+</RelativeLayout>

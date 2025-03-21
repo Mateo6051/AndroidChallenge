@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer glow -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="60%p"
+                android:startColor="@color/trophy_glow"
+                android:endColor="#00FFFFFF" />
+        </shape>
+    </item>
+    <!-- Shadow layer -->
+    <item android:top="2dp" android:left="1dp" android:right="3dp" android:bottom="4dp">
+        <shape android:shape="oval">
+            <solid android:color="#30000000" />
+        </shape>
+    </item>
+    <!-- Main trophy circle -->
+    <item android:top="1dp" android:left="1dp" android:right="2dp" android:bottom="3dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="60%p"
+                android:startColor="#FFFFFF"
+                android:centerColor="@color/gold"
+                android:endColor="#D68910"
+                android:centerX="0.4"
+                android:centerY="0.4" />
+        </shape>
+    </item>
+    <!-- Shine effect - first highlight -->
+    <item android:top="5dp" android:left="5dp" android:right="25dp" android:bottom="25dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="linear"
+                android:angle="45"
+                android:startColor="#FFFFFF"
+                android:centerColor="#80FFFFFF"
+                android:endColor="#00FFFFFF" />
+        </shape>
+    </item>
+    <!-- Shine effect - second smaller highlight -->
+    <item android:top="20dp" android:left="25dp" android:right="30dp" android:bottom="35dp">
+        <shape android:shape="oval">
+            <solid android:color="#50FFFFFF" />
+        </shape>
+    </item>
+</layer-list> 

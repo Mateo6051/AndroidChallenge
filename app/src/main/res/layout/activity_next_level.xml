@@ -1,37 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@drawable/background_elegant">
 
-    <TextView
-        android:id="@+id/next_level_title"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Level 1 completed"
-        android:textSize="36sp"
-        android:textColor="#000000"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="100dp"/>
+        android:orientation="vertical"
+        android:layout_centerInParent="true"
+        android:padding="24dp">
 
-    <Button
-        android:id="@+id/take_photo_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Next Level (Take Picture)"
-        android:textSize="20sp"
-        android:layout_below="@id/next_level_title"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="50dp"/>
+        <TextView
+            android:id="@+id/next_level_title"
+            style="@style/ElegantTitleStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Niveau 1 terminé"
+            android:textSize="32sp"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
 
-    <Button
-        android:id="@+id/main_menu_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Back to Main Menu"
-        android:textSize="20sp"
-        android:layout_below="@id/take_photo_button"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"/>
+        <!-- Trophée avec style néomorphique -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="32dp"
+            style="@style/NeumorphicCardStyle"
+            android:background="@drawable/neumorphic_card">
+            
+            <FrameLayout
+                android:id="@+id/trophyContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
+                <ImageView
+                    android:id="@+id/trophyImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/trophy_gold"
+                    android:padding="20dp"
+                    android:contentDescription="Trophée gagné" />
+                    
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/trophy_elegant"
+                    android:alpha="0.7" />
+                    
+                <TextView
+                    android:id="@+id/levelNumber"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="1"
+                    android:textColor="@color/primary_text"
+                    android:textSize="52sp"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:alpha="0.8" />
+            </FrameLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Carte d'information avec style néomorphique -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            style="@style/NeumorphicCardStyle"
+            android:background="@drawable/neumorphic_card"
+            android:layout_marginHorizontal="8dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+                
+                <TextView
+                    android:id="@+id/congratsText"
+                    style="@style/ElegantSubtitleStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Félicitations !"
+                    android:textSize="22sp"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp" />
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Vous avez terminé ce niveau avec succès !"
+                    android:textSize="16sp"
+                    android:textColor="@color/secondary_text"
+                    android:gravity="center"
+                    android:fontFamily="@font/roboto"
+                    android:letterSpacing="0.01"
+                    android:layout_marginBottom="20dp" />
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Progression"
+                        android:textSize="14sp"
+                        android:textColor="@color/secondary_text"
+                        android:fontFamily="@font/roboto_medium"
+                        android:layout_marginBottom="8dp" />
+                    
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp">
+                        
+                        <ProgressBar
+                            android:id="@+id/levelProgress"
+                            style="@style/ModernProgressStyle"
+                            android:layout_width="match_parent"
+                            android:layout_height="8dp"
+                            android:progress="20" />
+                    </FrameLayout>
+                    
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Niveau 1"
+                            android:textSize="12sp"
+                            android:textColor="@color/secondary_text"
+                            android:fontFamily="@font/roboto" />
+                            
+                        <TextView
+                            android:id="@+id/progressText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="20%"
+                            android:textColor="@color/accent"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/roboto_medium"
+                            android:layout_alignParentEnd="true" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Boutons élégants -->
+        <Button
+            android:id="@+id/take_photo_button"
+            style="@style/ElegantButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Niveau suivant"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/main_menu_button"
+            style="@style/ElegantButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Menu principal" />
+    </LinearLayout>
 </RelativeLayout>

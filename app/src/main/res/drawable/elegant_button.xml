@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/primary_light">
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <corners android:radius="28dp" />
+            <solid android:color="@color/white" />
+        </shape>
+    </item>
+    <item>
+        <layer-list>
+            <!-- Shadow layer -->
+            <item android:bottom="3dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="28dp" />
+                    <solid android:color="#20000000" />
+                </shape>
+            </item>
+            <!-- Button layer -->
+            <item android:bottom="3dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="28dp" />
+                    <gradient
+                        android:angle="315"
+                        android:endColor="@color/button_gradient_end"
+                        android:startColor="@color/button_gradient_start" />
+                    <padding
+                        android:bottom="12dp"
+                        android:left="16dp"
+                        android:right="16dp"
+                        android:top="12dp" />
+                </shape>
+            </item>
+            <!-- Subtle highlight at top -->
+            <item android:bottom="3dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="28dp" />
+                    <gradient
+                        android:angle="90"
+                        android:centerY="0.2"
+                        android:endColor="#00FFFFFF"
+                        android:centerColor="#00FFFFFF"
+                        android:startColor="#33FFFFFF"
+                        android:type="linear" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</ripple>
