@@ -1,11 +1,9 @@
 package com.example.goforit;
 
 import android.app.Activity;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -45,10 +43,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private int gridSize;
     private Bitmap backgroundImage;
     private int level;
+    private int rotationAngle = 0;
 
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
+
     public GameView(Context context, int valeur_y, Bitmap backgroundImage, int gridSize) {
         super(context);
         this.valeur_y = valeur_y;
@@ -146,7 +146,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
 
             Direction newDirection = Direction.STOPPED;
-            
+
             if (Math.abs(x) > Math.abs(y)) {
                 if (Math.abs(x) > tiltThreshold) {
                     newDirection = (x > 0) ? Direction.LEFT : Direction.RIGHT;
@@ -204,15 +204,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             return;
         }
 
-        if (nextX == gridSize - 1 && nextY == gridSize - 1) {
-            direction = Direction.STOPPED;
-            Intent intent = new Intent(getContext(), NextLevelScreen.class);
-            intent.putExtra("level", level);
-            getContext().startActivity(intent);
-            ((Activity) getContext()).finish();
-            return;
-        }
-
         if (obstacles[nextX][nextY]) {
             Log.d(TAG, "Collision avec un obstacle détectée");
             direction = Direction.STOPPED;
@@ -221,6 +212,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
         playerX = nextX;
         playerY = nextY;
+
+        rotationAngle += 90;
+        if (rotationAngle >= 360) {
+            rotationAngle = 0;
+        }
     }
 
     @Override
@@ -241,7 +237,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             int pixelX = playerX * cellSize;
             int pixelY = playerY * cellSize;
 
+            canvas.save();
+            canvas.rotate(rotationAngle, pixelX + cellSize / 2, pixelY + cellSize / 2);
             canvas.drawBitmap(stoneBitmapBall, pixelX, pixelY, null);
+            canvas.restore();
 
             paint.setColor(Color.BLACK);
             for (int i = 0; i < gridSize; i++) {
