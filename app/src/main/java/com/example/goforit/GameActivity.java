@@ -19,7 +19,7 @@ public class GameActivity extends Activity {
         Bitmap backgroundImage = getIntent().getParcelableExtra("background_image");
         int level = getIntent().getIntExtra("level", 1);
         int gridSize = getIntent().getIntExtra("gridSize", 10); // Récupérer la taille dynamique
-        GameView gameView = new GameView(this, 0, backgroundImage, gridSize);
+        GameView gameView = new GameView(this, backgroundImage, gridSize);
         setContentView(gameView);
     }
 }
