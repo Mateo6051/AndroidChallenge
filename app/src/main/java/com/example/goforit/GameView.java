@@ -20,7 +20,6 @@ import android.view.SurfaceView;
 import androidx.annotation.NonNull;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, SensorEventListener {
-    private static final String TAG = "GameView";
     private GameThread thread;
     private int playerX;
     private int playerY;
@@ -34,11 +33,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private float[] lastAccValues = new float[3];
     private static final float ALPHA = 0.8f;
     private int moveCounter = 0;
-    private static final int MOVE_DELAY = 5;
+    private static final int MOVE_DELAY = 3;
     private int cellSize;
     private Bitmap stoneBitmapStone;
     private Bitmap stoneBitmapBall;
-
+    private Bitmap doorBitmap;
     private int gridSize;
     private Bitmap backgroundImage;
     private int level;
@@ -46,6 +45,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private Maze maze;
     private int offsetX;
     private int offsetY;
+    private float drawX;
+    private float drawY;
+    private static final float MOVE_SPEED = 20.0f;
+    private float currentRotationAngle = 0;
+    private static final float ROTATION_SPEED = 100.0f;
+
+    private Direction lastMoveDirection = Direction.STOPPED;
 
     private Rect restartButton;
     private Paint buttonPaint;
@@ -63,7 +69,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
         playerX = maze.getStart().x;
         playerY = maze.getStart().y;
-
+        drawX = playerX * cellSize;
+        drawY = playerY * cellSize;
         this.backgroundImage = backgroundImage;
         this.gridSize = gridSize;
         this.level = ((Activity) context).getIntent().getIntExtra("level", 1);
@@ -92,56 +99,79 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     }
 
     public void update() {
-        if (direction == Direction.STOPPED) return;
+        if (direction != Direction.STOPPED) {
+            moveCounter++;
+            if (moveCounter >= MOVE_DELAY) {
+                moveCounter = 0;
+                int nextX = playerX;
+                int nextY = playerY;
 
-        moveCounter++;
-        if (moveCounter < MOVE_DELAY) return;
-        moveCounter = 0;
+                switch (direction) {
+                    case UP: nextY--; break;
+                    case DOWN: nextY++; break;
+                    case LEFT: nextX--; break;
+                    case RIGHT: nextX++; break;
+                }
 
-        int nextX = playerX;
-        int nextY = playerY;
+                if (nextX < 0 || nextX >= gridSize + 2 || nextY < 0 || nextY >= gridSize + 2 || maze.isObstacle(nextX, nextY)) {
+                    direction = Direction.STOPPED;
+                } else {
+                    playerX = nextX;
+                    playerY = nextY;
+                    lastMoveDirection = direction;  // ✅ Store last valid direction
 
-        switch (direction) {
-            case UP:
-                nextY--;
-                break;
-            case DOWN:
-                nextY++;
-                break;
-            case LEFT:
-                nextX--;
-                break;
-            case RIGHT:
-                nextX++;
-                break;
+                    if (maze.isGoal(playerX, playerY)) {
+                        direction = Direction.STOPPED;
+                        Intent intent = new Intent(getContext(), NextLevelScreen.class);
+                        intent.putExtra("level", level);
+                        getContext().startActivity(intent);
+                        ((Activity) getContext()).finish();
+                        return;
+                    }
+                }
+            }
         }
 
-        if (nextX < 0 || nextX >= gridSize + 2 || nextY < 0 || nextY >= gridSize + 2) {
-            direction = Direction.STOPPED;
-            return;
+        // Smooth position interpolation towards target cell
+        float targetX = playerX * cellSize;
+        float targetY = playerY * cellSize;
+
+        if (Math.abs(drawX - targetX) > MOVE_SPEED) {
+            drawX += (drawX < targetX) ? MOVE_SPEED : -MOVE_SPEED;
+        } else {
+            drawX = targetX;
         }
 
-        if (maze.isGoal(nextX, nextY)) {
-            direction = Direction.STOPPED;
-            Intent intent = new Intent(getContext(), NextLevelScreen.class);
-            intent.putExtra("level", level);
-            getContext().startActivity(intent);
-            ((Activity) getContext()).finish();
-            return;
+        if (Math.abs(drawY - targetY) > MOVE_SPEED) {
+            drawY += (drawY < targetY) ? MOVE_SPEED : -MOVE_SPEED;
+        } else {
+            drawY = targetY;
         }
 
-        if (maze.isObstacle(nextX, nextY)) {
-            direction = Direction.STOPPED;
-            return;
+        // Smooth rotation based on last valid direction (avoids flip/midway change)
+        if (direction != Direction.STOPPED || isBallMoving()) {
+            float perFrameRotationSpeed = 30.0f;
+            Direction rotationDirection = (direction != Direction.STOPPED) ? direction : lastMoveDirection;
+
+            switch (rotationDirection) {
+                case LEFT:
+                    currentRotationAngle -= perFrameRotationSpeed;
+                    break;
+                case RIGHT:
+                    currentRotationAngle += perFrameRotationSpeed;
+                    break;
+                case UP:
+                    currentRotationAngle -= perFrameRotationSpeed;
+                    break;
+                case DOWN:
+                    currentRotationAngle += perFrameRotationSpeed;
+                    break;
+            }
         }
 
-        playerX = nextX;
-        playerY = nextY;
-
-        rotationAngle += 90;
-        if (rotationAngle >= 360) {
-            rotationAngle = 0;
-        }
+        // Normalize rotation angle
+        if (currentRotationAngle >= 360) currentRotationAngle -= 360;
+        if (currentRotationAngle < 0) currentRotationAngle += 360;
     }
 
 
@@ -149,10 +179,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
         stoneBitmapStone = BitmapFactory.decodeResource(getResources(), R.drawable.stone_icon);
         stoneBitmapBall = BitmapFactory.decodeResource(getResources(), R.drawable.red_ball);
+        doorBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.door);
         int newWidth = cellSize;
         int newHeight = cellSize;
         stoneBitmapStone = Bitmap.createScaledBitmap(stoneBitmapStone, newWidth, newHeight, true);
         stoneBitmapBall = Bitmap.createScaledBitmap(stoneBitmapBall, newWidth, newHeight, true);
+        doorBitmap = Bitmap.createScaledBitmap(doorBitmap, newWidth, newHeight, true);
 
         thread.setRunning(true);
         thread.start();
@@ -185,7 +217,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && direction == Direction.STOPPED) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && direction == Direction.STOPPED && !isBallMoving()) {
             float[] filteredValues = filterAccValues(event.values);
             float x = filteredValues[0];
             float y = filteredValues[1];
@@ -259,21 +291,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 int pixelY = offsetY + j * cellSize;
 
                 if (maze.isGoal(i, j)) {
-                    // Dessiner la sortie en vert
-                    paint.setColor(Color.GREEN);
-                    canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
+                    // Draw the door icon instead of a green square
+                    canvas.drawBitmap(doorBitmap, pixelX, pixelY, null);
                 } else if (maze.isObstacle(i, j)) {
-                    // Dessiner les obstacles avec Bitmap
+                    // Draw obstacles with stone bitmap
                     canvas.drawBitmap(stoneBitmapStone, pixelX, pixelY, null);
                 }
             }
         }
 
-        int pixelX = offsetX + playerX * cellSize;
-        int pixelY = offsetY + playerY * cellSize;
+        // Draw the player with rotation
+        int pixelX = offsetX + (int) drawX;
+        int pixelY = offsetY + (int) drawY;
 
         canvas.save();
-        canvas.rotate(rotationAngle, pixelX + cellSize / 2, pixelY + cellSize / 2);
+        canvas.rotate(currentRotationAngle, pixelX + cellSize / 2, pixelY + cellSize / 2);
         canvas.drawBitmap(stoneBitmapBall, pixelX, pixelY, null);
         canvas.restore();
 
@@ -296,5 +328,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         canvas.drawRect(restartButton, buttonPaint);
         canvas.drawText("Restart", restartButton.centerX(), restartButton.centerY() + (cellSize / 4), textPaint);
 
+    }
+
+    private boolean isBallMoving() {
+        float targetX = playerX * cellSize;
+        float targetY = playerY * cellSize;
+        return Math.abs(drawX - targetX) > 1 || Math.abs(drawY - targetY) > 1;
     }
 }
