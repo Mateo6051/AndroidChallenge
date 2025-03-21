@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_elegant">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        style="@style/ElegantTitleStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Niveau personnalisé"
+        android:gravity="center"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="8dp" />
+        
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvTitle"
+        android:text="Niveau 1"
+        android:textSize="18sp"
+        android:textColor="@color/accent"
+        android:fontFamily="@font/roboto_medium"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvSubtitle"
+        android:text="Prenez une photo qui servira de fond pour votre niveau"
+        android:textSize="16sp"
+        android:textColor="@color/secondary_text"
+        android:fontFamily="@font/roboto"
+        android:lineSpacingExtra="4dp"
+        android:gravity="center"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Conteneur de la photo avec effet neumorphique -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/imageContainer"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_below="@id/tvDescription"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="32dp"
+        style="@style/NeumorphicCardStyle"
+        android:background="@drawable/neumorphic_card">
+        
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            android:padding="16dp" />
+            
+        <RelativeLayout
+            android:id="@+id/placeholderContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            
+            <ImageView
+                android:id="@+id/imagePlaceholder"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_centerInParent="true"
+                android:src="@android:drawable/ic_menu_camera"
+                android:tint="@color/secondary_text"
+                android:alpha="0.5" />
+                
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/imagePlaceholder"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="16dp"
+                android:text="Aucune photo prise"
+                android:textColor="@color/secondary_text"
+                android:fontFamily="@font/roboto"
+                android:alpha="0.7" />
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="32dp"
+        android:padding="16dp">
+
+        <!-- Bouton prendre photo amélioré -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="28dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/primary">
+            
+            <Button
+                android:id="@+id/btnTakePhoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Prendre une photo"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/roboto_medium"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:gravity="center" />
+                
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_camera"
+                android:tint="@color/white"
+                android:layout_gravity="center_vertical|start"
+                android:layout_marginStart="16dp" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Bouton commencer avec effet élégant -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            app:cardCornerRadius="28dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/accent">
+            
+            <Button
+                android:id="@+id/btnStartTheGame"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Commencer l'aventure"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:fontFamily="@font/roboto_medium"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:gravity="center" />
+                
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_media_play"
+                android:tint="@color/white"
+                android:layout_gravity="center_vertical|start"
+                android:layout_marginStart="16dp" />
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+    
+    <!-- Indicateur de progression -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="24dp"
+        android:background="@drawable/glass_effect"
+        android:padding="8dp">
+        
+        <TextView
+            android:id="@+id/levelProgressText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1/5"
+            android:textColor="@color/primary"
+            android:textStyle="bold"
+            android:fontFamily="@font/roboto_medium" />
+    </LinearLayout>
+</RelativeLayout>

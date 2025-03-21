@@ -1,39 +1,90 @@
 package com.example.goforit;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-public class MainActivity extends Activity {
+import java.util.List;
+
+public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
+    private TrophyManager trophyManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        
+        // Plein écran
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-
-
-        SharedPreferences sharedPref =
-                this.getPreferences(Context.MODE_PRIVATE);
-        int valeur_y = sharedPref.getInt("valeur_y", 0);
-        valeur_y = (valeur_y + 100) % 400;
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt("valeur_y", valeur_y);
-        editor.apply();
-        setContentView(new GameView(this, valeur_y));
-
+                
+        setContentView(R.layout.activity_main);
+        
+        // Initialiser le gestionnaire de trophées
+        trophyManager = new TrophyManager(this);
+        
+        // Animer le logo
+        ImageView logoImage = findViewById(R.id.logoImage);
+        Animation pulse = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
+        pulse.setDuration(1000);
+        logoImage.startAnimation(pulse);
+        
+        // Configurer les boutons
+        Button btnStart = findViewById(R.id.btnStart);
+        Button btnViewTrophies = findViewById(R.id.btnViewTrophies);
+        
+        btnStart.setOnClickListener(v -> {
+            Log.d(TAG, "Démarrage du jeu");
+            Intent intent = new Intent(MainActivity.this, TakePictureActivity.class);
+            intent.putExtra("level", 1);
+            startActivity(intent);
+        });
+        
+        btnViewTrophies.setOnClickListener(v -> {
+            Log.d(TAG, "Affichage des trophées");
+            Intent intent = new Intent(MainActivity.this, TrophyCollectionActivity.class);
+            startActivity(intent);
+        });
+        
+        // Afficher les aperçus de trophées
+        displayTrophyPreviews();
     }
-
+    
+    /**
+     * Affiche un aperçu des trophées gagnés
+     */
+    private void displayTrophyPreviews() {
+        List<Trophy> trophies = trophyManager.getTrophies();
+        
+        ImageView trophyPreview1 = findViewById(R.id.trophyPreview1);
+        ImageView trophyPreview2 = findViewById(R.id.trophyPreview2);
+        ImageView trophyPreview3 = findViewById(R.id.trophyPreview3);
+        
+        // Par défaut, les trophées sont invisibles
+        trophyPreview1.setVisibility(View.INVISIBLE);
+        trophyPreview2.setVisibility(View.INVISIBLE);
+        trophyPreview3.setVisibility(View.INVISIBLE);
+        
+        // Afficher les trophées gagnés
+        for (Trophy trophy : trophies) {
+            if (trophy.getType() == Trophy.Type.GOLD) {
+                trophyPreview1.setVisibility(View.VISIBLE);
+            } else if (trophy.getType() == Trophy.Type.SILVER) {
+                trophyPreview2.setVisibility(View.VISIBLE);
+            } else if (trophy.getType() == Trophy.Type.BRONZE) {
+                trophyPreview3.setVisibility(View.VISIBLE);
+            }
+        }
+    }
 }
