@@ -7,26 +7,22 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
-
-import java.util.Random;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, SensorEventListener {
     private GameThread thread;
@@ -68,17 +64,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     private RectF restartButtonTouchArea;
     private Bitmap restartIcon;
-    
+
     // Constantes pour l'animation de pulsation
     private static final float PULSE_MIN = 0.95f;
     private static final float PULSE_MAX = 1.05f;
     private static final float PULSE_STEP = 0.01f;
     private static final long PULSE_INTERVAL = 16; // ~60 FPS
-    
+
     private float pulseFactor = 1.0f;
     private boolean pulseGrowing = true;
     private long lastPulseTime = 0;
-    
+
     // Variables pour l'effet de ripple
     private boolean isRippleActive = false;
     private float rippleRadius = 0;
@@ -88,6 +84,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private float rippleCenterY = 0;
     private static final long RIPPLE_DURATION = 400; // durée en millisecondes
 
+    private MediaPlayer moveSound;
+    private MediaPlayer victorySound;
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
@@ -115,6 +113,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         }
 
         calculateCellSize();
+        moveSound = MediaPlayer.create(context, R.raw.move_sound);
+        victorySound = MediaPlayer.create(context, R.raw.victory_sound);
     }
 
     private void calculateCellSize() {
@@ -129,6 +129,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     }
 
     public void update() {
+        moveSound.start();
+//        if (!isBallMoving()) {
+//            moveSound.stop();
+//            moveSound.release();
+//            moveSound = null;
+//        }
         if (direction != Direction.STOPPED) {
             moveCounter++;
             if (moveCounter >= MOVE_DELAY) {
@@ -137,10 +143,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 int nextY = playerY;
 
                 switch (direction) {
-                    case UP: nextY--; break;
-                    case DOWN: nextY++; break;
-                    case LEFT: nextX--; break;
-                    case RIGHT: nextX++; break;
+                    case UP:
+                        nextY--;
+                        break;
+                    case DOWN:
+                        nextY++;
+                        break;
+                    case LEFT:
+                        nextX--;
+                        break;
+                    case RIGHT:
+                        nextX++;
+                        break;
                 }
 
                 if (nextX < 0 || nextX >= gridSize + 2 || nextY < 0 || nextY >= gridSize + 2 || maze.isObstacle(nextX, nextY)) {
@@ -221,7 +235,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {}
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+    }
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
@@ -281,16 +296,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             float x = event.getX();
             float y = event.getY();
-            
+
             if (restartButtonTouchArea != null && restartButtonTouchArea.contains(x, y)) {
                 // Démarrer l'effet de ripple
                 startRippleEffect(x, y);
-                
+
                 // Redémarrer le jeu
                 restartGame();
                 return true;
             }
-            
+
             // Reste du code pour les mouvements de balle...
         }
         return super.onTouchEvent(event);
@@ -304,9 +319,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     }
 
 
-
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
 
     @Override
     public void draw(Canvas canvas) {
@@ -358,67 +373,67 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private void drawModernRestartButton(Canvas canvas) {
         // Mettre à jour l'animation de pulsation
         updatePulseAnimation();
-        
+
         // Paramètres du bouton - simplifié mais moderne
-        int buttonSize = (int)(cellSize * 1.7f);
+        int buttonSize = (int) (cellSize * 1.7f);
         int margin = cellSize / 2;
-        
+
         // Position du bouton dans le coin inférieur droit
-        int centerX = canvas.getWidth() - buttonSize/2 - margin;
-        int centerY = canvas.getHeight() - buttonSize/2 - margin * 2;
-        
+        int centerX = canvas.getWidth() - buttonSize / 2 - margin;
+        int centerY = canvas.getHeight() - buttonSize / 2 - margin * 2;
+
         // Animation de pulsation simple
         float pulseFactor = 1.0f + (float) Math.sin(System.currentTimeMillis() / 800.0) * 0.07f;
-        int pulsingButtonSize = (int)(buttonSize * pulseFactor);
-        
+        int pulsingButtonSize = (int) (buttonSize * pulseFactor);
+
         // Position du texte sous le bouton
-        float textY = centerY + buttonSize/2 + cellSize/2;
-        
+        float textY = centerY + buttonSize / 2 + cellSize / 2;
+
         // Zone tactile étendue pour inclure le texte
         restartButtonTouchArea = new RectF(
-            centerX - buttonSize/2 - margin/3,
-            centerY - buttonSize/2 - margin/3,
-            centerX + buttonSize/2 + margin/3,
-            textY + cellSize/3
+                centerX - buttonSize / 2 - margin / 3,
+                centerY - buttonSize / 2 - margin / 3,
+                centerX + buttonSize / 2 + margin / 3,
+                textY + cellSize / 3
         );
-        
+
         // Ombre simple pour effet de profondeur
         Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         shadowPaint.setColor(Color.BLACK);
         shadowPaint.setAlpha(50);
-        canvas.drawCircle(centerX + 3, centerY + 3, pulsingButtonSize/2 + 2, shadowPaint);
-        
+        canvas.drawCircle(centerX + 3, centerY + 3, pulsingButtonSize / 2 + 2, shadowPaint);
+
         // Fond du bouton avec dégradé moderne mais simple
         Paint buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        
+
         // Dégradé radial pour un effet 3D subtil
         RadialGradient gradient = new RadialGradient(
-            centerX - pulsingButtonSize/5,
-            centerY - pulsingButtonSize/5,
-            pulsingButtonSize,
-            new int[] {
-                Color.parseColor("#3B82F6"),  // Bleu vif
-                Color.parseColor("#2563EB"),  // Bleu principal
-                Color.parseColor("#1D4ED8")   // Bleu foncé
-            },
-            new float[] {0.3f, 0.6f, 1.0f},
-            Shader.TileMode.CLAMP
+                centerX - pulsingButtonSize / 5,
+                centerY - pulsingButtonSize / 5,
+                pulsingButtonSize,
+                new int[]{
+                        Color.parseColor("#3B82F6"),  // Bleu vif
+                        Color.parseColor("#2563EB"),  // Bleu principal
+                        Color.parseColor("#1D4ED8")   // Bleu foncé
+                },
+                new float[]{0.3f, 0.6f, 1.0f},
+                Shader.TileMode.CLAMP
         );
-        
+
         buttonPaint.setShader(gradient);
-        canvas.drawCircle(centerX, centerY, pulsingButtonSize/2, buttonPaint);
-        
+        canvas.drawCircle(centerX, centerY, pulsingButtonSize / 2, buttonPaint);
+
         // Contour léger pour définition
         Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         strokePaint.setStyle(Paint.Style.STROKE);
         strokePaint.setStrokeWidth(2);
         strokePaint.setColor(Color.WHITE);
         strokePaint.setAlpha(100);
-        canvas.drawCircle(centerX, centerY, pulsingButtonSize/2 - 1, strokePaint);
-        
+        canvas.drawCircle(centerX, centerY, pulsingButtonSize / 2 - 1, strokePaint);
+
         // Dessiner l'icône de restart
-        int iconSize = (int)(pulsingButtonSize * 0.7f);
-        
+        int iconSize = (int) (pulsingButtonSize * 0.7f);
+
         if (restartIcon == null || restartIcon.getWidth() != iconSize) {
             try {
                 Drawable drawable = getContext().getDrawable(R.drawable.restart_icon_modern);
@@ -433,24 +448,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 restartIcon = null;
             }
         }
-        
+
         if (restartIcon != null) {
             Paint iconPaint = new Paint();
-            float iconX = centerX - iconSize/2;
-            float iconY = centerY - iconSize/2;
+            float iconX = centerX - iconSize / 2;
+            float iconY = centerY - iconSize / 2;
             canvas.drawBitmap(restartIcon, iconX, iconY, iconPaint);
         }
-        
+
         // Texte RESTART clairement visible
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(cellSize/3);
+        textPaint.setTextSize(cellSize / 3);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setShadowLayer(3, 1, 1, Color.BLACK);
-        
+
         // Dessiner le texte
         canvas.drawText("RESTART", centerX, textY, textPaint);
-        
+
         // Effet ripple sur interaction
         updateAndDrawRippleEffect(canvas);
     }
@@ -463,9 +478,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         if (currentTime - lastPulseTime < PULSE_INTERVAL) {
             return; // Pas encore temps de mettre à jour
         }
-        
+
         lastPulseTime = currentTime;
-        
+
         if (pulseGrowing) {
             pulseFactor += PULSE_STEP;
             if (pulseFactor >= PULSE_MAX) {
@@ -490,7 +505,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         rippleCenterX = x;
         rippleCenterY = y;
         rippleStartTime = System.currentTimeMillis();
-        
+
         // Calculer le rayon maximum en fonction de la taille du bouton
         if (restartButtonTouchArea != null) {
             float width = restartButtonTouchArea.width();
@@ -500,7 +515,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             maxRippleRadius = cellSize * 2;
         }
     }
-    
+
     /**
      * Met à jour et dessine l'effet de ripple si actif
      */
@@ -508,24 +523,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         if (!isRippleActive) {
             return;
         }
-        
+
         long elapsedTime = System.currentTimeMillis() - rippleStartTime;
         if (elapsedTime > RIPPLE_DURATION) {
             isRippleActive = false;
             return;
         }
-        
+
         // Calculer le rayon actuel et l'opacité en fonction du temps écoulé
         float progress = Math.min(1.0f, elapsedTime / (float) RIPPLE_DURATION);
         rippleRadius = maxRippleRadius * progress;
         int alpha = (int) (255 * (1.0f - progress));
-        
+
         // Dessiner le cercle de ripple
         Paint ripplePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         ripplePaint.setColor(Color.WHITE);
         ripplePaint.setAlpha(alpha);
         ripplePaint.setStyle(Paint.Style.FILL);
-        
+
         canvas.drawCircle(rippleCenterX, rippleCenterY, rippleRadius, ripplePaint);
     }
 
