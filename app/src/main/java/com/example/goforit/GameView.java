@@ -7,7 +7,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -304,12 +307,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
             // Gestion du clic sur le bouton solution
             if (solutionButtonTouchArea != null && solutionButtonTouchArea.contains(x, y)) {
-                // Activer/désactiver l'affichage de la solution
+                // Simplement activer/désactiver l'affichage de la solution
                 showSolution = !showSolution;
                 return true;
             }
-
-            // Si le joueur touche l'écran ailleurs, arrêter le mouvement
+            
+            // Si le joueur touche l'écran ailleurs, arrêter le mouvement ou changer de direction
             if (direction != Direction.STOPPED) {
                 direction = Direction.STOPPED;
                 return true;
@@ -601,6 +604,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
      * Dessine les marqueurs du chemin de solution
      */
     private void drawSolutionPath(Canvas canvas) {
+        // Récupérer le chemin directement depuis la classe Maze
         Set<Point> path = maze.getPath();
         if (path == null || path.isEmpty()) return;
 
@@ -613,8 +617,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         linePaint.setStyle(Paint.Style.STROKE);
 
         // Dessiner des connexions entre les points adjacents
-        // Pour cela, nous devons déterminer les points adjacents
         for (Point point : path) {
+            // Ne pas dessiner de lignes pour les obstacles (vérification de sécurité)
             if (maze.isObstacle(point.x, point.y)) continue;
 
             // Coordonnées du point actuel
@@ -649,7 +653,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         int markerSize = cellSize / 4;
 
         for (Point point : path) {
-            // Ne pas dessiner de marqueur pour les obstacles (au cas où)
+            // Ne pas dessiner de marqueur pour les obstacles
             if (maze.isObstacle(point.x, point.y)) continue;
 
             int pixelX = offsetX + point.x * cellSize + cellSize / 2;
@@ -657,8 +661,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
             // Effet de halo autour du marqueur
             Paint haloPaint = new Paint();
-            haloPaint.setColor(Color.parseColor("#FFD700"));
-            haloPaint.setAlpha(40);
+            haloPaint.setColor(Color.parseColor("#FFD700")); // Or
+            haloPaint.setAlpha(40); // Très transparent
             haloPaint.setStyle(Paint.Style.FILL);
             canvas.drawCircle(pixelX, pixelY, markerSize * 1.5f, haloPaint);
 
@@ -682,8 +686,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         playerMarkerPaint.setStyle(Paint.Style.STROKE);
         playerMarkerPaint.setStrokeWidth(3);
         canvas.drawCircle(playerPixelX, playerPixelY, markerSize, playerMarkerPaint);
-
-        // Effet spécial pour le point d'arrivée
+        
+        // Effet spécial pour la sortie
         Point goal = maze.getGoal();
         if (goal != null) {
             int goalX = offsetX + goal.x * cellSize + cellSize / 2;
@@ -693,7 +697,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             float pulseFactor = 1.0f + (float) Math.sin(System.currentTimeMillis() / 300.0) * 0.2f;
 
             Paint goalPaint = new Paint();
-            goalPaint.setColor(Color.parseColor("#FFD700"));
+            goalPaint.setColor(Color.parseColor("#FFD700")); // Or
             goalPaint.setStyle(Paint.Style.STROKE);
             goalPaint.setStrokeWidth(4);
             goalPaint.setAlpha(200);
@@ -702,22 +706,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
             // Texte "SORTIE" près du point d'arrivée
             Paint exitTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            exitTextPaint.setColor(Color.parseColor("#FFD700"));
+            exitTextPaint.setColor(Color.parseColor("#FFD700")); // Or
             exitTextPaint.setTextSize(cellSize / 3);
             exitTextPaint.setTextAlign(Paint.Align.CENTER);
             exitTextPaint.setShadowLayer(3, 1, 1, Color.BLACK);
 
             // Calculer la position du texte en fonction de l'emplacement de la sortie
             float textX = goalX;
-            float textY;
-
-            // Position du texte selon la position de la sortie
-            if (goal.y == 0) {
-                textY = goalY - cellSize / 2; // Sortie en haut
-            } else if (goal.y >= gridSize) {
-                textY = goalY + cellSize; // Sortie en bas
-            } else if (goal.x == 0) {
-                textY = goalY - cellSize / 2; // Sortie à gauche
+            float textY = goalY + cellSize;
+            
+            // Ajuster la position selon l'emplacement de la sortie
+            if (goal.y == 0) { // Sortie en haut
+                textY = goalY - cellSize / 2;
+            } else if (goal.y >= gridSize) { // Sortie en bas
+                textY = goalY + cellSize;
+            } else if (goal.x == 0) { // Sortie à gauche
+                textY = goalY - cellSize / 2;
                 textX = goalX + cellSize / 2;
             } else {
                 textY = goalY - cellSize / 2; // Sortie à droite

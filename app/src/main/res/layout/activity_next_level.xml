@@ -89,6 +89,7 @@
                     android:layout_marginBottom="12dp" />
                 
                 <TextView
+                    android:id="@+id/detailText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Vous avez terminé ce niveau avec succès !"
