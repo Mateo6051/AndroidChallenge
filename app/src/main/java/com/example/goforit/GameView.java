@@ -1,6 +1,7 @@
 package com.example.goforit;
 
 import android.app.Activity;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -9,30 +10,40 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.MotionEvent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 
-public class GameView extends SurfaceView implements SurfaceHolder.Callback {
-
+public class GameView extends SurfaceView implements SurfaceHolder.Callback, SensorEventListener {
+    private static final String TAG = "GameView";
     private GameThread thread;
-    private int playerX = 0;
-    private int playerY = 0;
-    private int valeur_y;
-    private boolean[][] obstacles;
-    private Direction direction = Direction.RIGHT;
-    private Bitmap backgroundImage;
-    private int level;
-
-    private float touchX, touchY;
-    private static final int SWIPE_THRESHOLD = 50;
-
+    private int playerX = 0; // Position x du joueur dans la grille (0-9)
+    private int playerY = 0; // Position y du joueur dans la grille (0-9)
+    private int valeur_y; // Gardé pour compatibilité avec MainActivity
+    private boolean[][] obstacles = new boolean[10][10]; // Grille 10x10 pour obstacles
+    private Direction direction = Direction.RIGHT; // Direction initiale
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private float tiltThreshold = 2.0f;
+    private float neutralZone = 1.0f;
+    private long lastDirectionChange = 0;
+    private static final long DIRECTION_CHANGE_COOLDOWN = 500;
+    private float[] lastAccValues = new float[3];
+    private static final float ALPHA = 0.8f;
+    // Contrôle de la vitesse
     private int moveCounter = 0;
     private static final int MOVE_DELAY = 5;
 
     private int cellSize;
     private int gridSize;
+    private Bitmap backgroundImage;
+    private int level;
 
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
@@ -53,6 +64,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             obstacles[3][4] = true;
             obstacles[7][8] = true;
             obstacles[gridSize - 1][gridSize - 1] = true;
+        }
+
+        sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if (accelerometer == null) {
+            Log.e(TAG, "Accéléromètre non disponible sur cet appareil");
+        } else {
+            Log.d(TAG, "Accéléromètre initialisé avec succès");
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
         }
 
         calculateCellSize();
@@ -76,6 +96,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
+        sensorManager.unregisterListener(this);
         boolean retry = true;
         while (retry) {
             try {
@@ -89,42 +110,57 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         setFocusable(false); // Désactiver le focus pour libérer les événements tactiles
     }
 
+    private float[] filterAccValues(float[] values) {
+        lastAccValues[0] = ALPHA * lastAccValues[0] + (1 - ALPHA) * values[0];
+        lastAccValues[1] = ALPHA * lastAccValues[1] + (1 - ALPHA) * values[1];
+        lastAccValues[2] = ALPHA * lastAccValues[2] + (1 - ALPHA) * values[2];
+        return lastAccValues;
+    }
+
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (direction != Direction.STOPPED) {
-            return true;
-        }
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && direction == Direction.STOPPED) {
+            float[] filteredValues = filterAccValues(event.values);
+            float x = filteredValues[0];
+            float y = filteredValues[1];
+            float z = filteredValues[2];
+            long currentTime = System.currentTimeMillis();
 
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                touchX = event.getX();
-                touchY = event.getY();
-                return true;
+            if (currentTime - lastDirectionChange < DIRECTION_CHANGE_COOLDOWN) {
+                return;
+            }
 
-            case MotionEvent.ACTION_UP:
-                float deltaX = event.getX() - touchX;
-                float deltaY = event.getY() - touchY;
+            if (z < 6.0f) {
+                return;
+            }
 
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
-                        if (deltaX > 0) {
-                            direction = Direction.RIGHT;
-                        } else {
-                            direction = Direction.LEFT;
-                        }
-                    }
-                } else {
-                    if (Math.abs(deltaY) > SWIPE_THRESHOLD) {
-                        if (deltaY > 0) {
-                            direction = Direction.DOWN;
-                        } else {
-                            direction = Direction.UP;
-                        }
-                    }
+            if (Math.abs(x) < neutralZone && Math.abs(y) < neutralZone) {
+                return;
+            }
+
+            Direction newDirection = Direction.STOPPED;
+
+            if (Math.abs(x) > Math.abs(y)) {
+                if (Math.abs(x) > tiltThreshold) {
+                    newDirection = (x > 0) ? Direction.LEFT : Direction.RIGHT;
                 }
-                return true;
+            } else {
+                if (Math.abs(y) > tiltThreshold) {
+                    newDirection = (y > 0) ? Direction.DOWN : Direction.UP;
+                }
+            }
+
+            if (newDirection != Direction.STOPPED) {
+                direction = newDirection;
+                lastDirectionChange = currentTime;
+                Log.d(TAG, "Nouvelle direction: " + direction + " - acc: x=" + x + ", y=" + y + ", z=" + z);
+            }
         }
-        return super.onTouchEvent(event);
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // Pas besoin d'implémentation spécifique pour le moment
     }
 
     public void update() {
@@ -171,6 +207,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         if (obstacles[nextX][nextY]) {
+            Log.d(TAG, "Collision avec un obstacle détectée");
             direction = Direction.STOPPED;
             return;
         }
@@ -193,6 +230,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
             Paint paint = new Paint();
             paint.setColor(Color.rgb(250, 0, 0));
+
             int pixelX = playerX * cellSize;
             int pixelY = playerY * cellSize;
             canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
