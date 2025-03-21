@@ -7,19 +7,17 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -69,22 +67,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     private RectF restartButtonTouchArea;
     private Bitmap restartIcon;
-    
+
     // Éléments pour le bouton solution
     private RectF solutionButtonTouchArea;
     private Bitmap solutionIcon;
     private boolean showSolution = false;
-    
+
     // Constantes pour l'animation de pulsation
     private static final float PULSE_MIN = 0.95f;
     private static final float PULSE_MAX = 1.05f;
     private static final float PULSE_STEP = 0.01f;
     private static final long PULSE_INTERVAL = 16; // ~60 FPS
-    
+
     private float pulseFactor = 1.0f;
     private boolean pulseGrowing = true;
     private long lastPulseTime = 0;
-    
+
     // Variables pour l'effet de ripple
     private boolean isRippleActive = false;
     private float rippleRadius = 0;
@@ -93,6 +91,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private float rippleCenterX = 0;
     private float rippleCenterY = 0;
     private static final long RIPPLE_DURATION = 400; // durée en millisecondes
+    private MediaPlayer moveSoundPlayer;
 
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
@@ -134,6 +133,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         offsetY = (screenHeight - totalSize) / 2;
     }
 
+    private boolean isSoundPlaying = false;
+
     public void update() {
         if (direction != Direction.STOPPED) {
             moveCounter++;
@@ -154,7 +155,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 } else {
                     playerX = nextX;
                     playerY = nextY;
-                    lastMoveDirection = direction;  // ✅ Store last valid direction
+                    lastMoveDirection = direction;
 
                     if (maze.isGoal(playerX, playerY)) {
                         direction = Direction.STOPPED;
@@ -168,7 +169,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
         }
 
-        // Smooth position interpolation towards target cell
         float targetX = playerX * cellSize;
         float targetY = playerY * cellSize;
 
@@ -184,31 +184,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             drawY = targetY;
         }
 
-        // Smooth rotation based on last valid direction (avoids flip/midway change)
         if (direction != Direction.STOPPED || isBallMoving()) {
             float perFrameRotationSpeed = 30.0f;
             Direction rotationDirection = (direction != Direction.STOPPED) ? direction : lastMoveDirection;
 
             switch (rotationDirection) {
-                case LEFT:
-                    currentRotationAngle -= perFrameRotationSpeed;
-                    break;
-                case RIGHT:
-                    currentRotationAngle += perFrameRotationSpeed;
-                    break;
-                case UP:
-                    currentRotationAngle -= perFrameRotationSpeed;
-                    break;
-                case DOWN:
-                    currentRotationAngle += perFrameRotationSpeed;
-                    break;
+                case LEFT: currentRotationAngle -= perFrameRotationSpeed; break;
+                case RIGHT: currentRotationAngle += perFrameRotationSpeed; break;
+                case UP: currentRotationAngle -= perFrameRotationSpeed; break;
+                case DOWN: currentRotationAngle += perFrameRotationSpeed; break;
             }
         }
 
-        // Normalize rotation angle
         if (currentRotationAngle >= 360) currentRotationAngle -= 360;
         if (currentRotationAngle < 0) currentRotationAngle += 360;
     }
+
 
 
     @Override
@@ -227,11 +218,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {}
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+    }
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
         sensorManager.unregisterListener(this);
+        if (moveSoundPlayer != null) {
+            moveSoundPlayer.release();
+            moveSoundPlayer = null;
+        }
         boolean retry = true;
         while (retry) {
             try {
@@ -278,6 +274,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             if (newDirection != Direction.STOPPED) {
                 direction = newDirection;
                 lastDirectionChange = currentTime;
+
+                if (moveSoundPlayer != null) {
+                    moveSoundPlayer.release();
+                }
+                int randomIndex = new Random().nextInt(3);
+                moveSoundPlayer = MediaPlayer.create(getContext(), getMoveSoundResId(randomIndex));
+                moveSoundPlayer.start();
             }
         }
     }
@@ -287,23 +290,25 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             float x = event.getX();
             float y = event.getY();
-            
+
             if (restartButtonTouchArea != null && restartButtonTouchArea.contains(x, y)) {
                 // Démarrer l'effet de ripple
                 startRippleEffect(x, y);
-                
+
                 // Redémarrer le jeu
                 restartGame();
                 return true;
             }
-            
+
+            // Reste du code pour les mouvements de balle...
+
             // Gestion du clic sur le bouton solution
             if (solutionButtonTouchArea != null && solutionButtonTouchArea.contains(x, y)) {
                 // Activer/désactiver l'affichage de la solution
                 showSolution = !showSolution;
                 return true;
             }
-            
+
             // Si le joueur touche l'écran ailleurs, arrêter le mouvement
             if (direction != Direction.STOPPED) {
                 direction = Direction.STOPPED;
@@ -313,10 +318,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 // basé sur la position du toucher par rapport à la position du joueur
                 int playerScreenX = offsetX + playerX * cellSize + cellSize / 2;
                 int playerScreenY = offsetY + playerY * cellSize + cellSize / 2;
-                
+
                 // Calculer la direction basée sur l'angle entre la position du joueur et le toucher
                 double angle = Math.toDegrees(Math.atan2(y - playerScreenY, x - playerScreenX));
-                
+
                 // Convertir l'angle en direction
                 if (angle > -45 && angle <= 45) {
                     direction = Direction.RIGHT;
@@ -327,7 +332,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 } else {
                     direction = Direction.UP;
                 }
-                
+
                 return true;
             }
         }
@@ -339,15 +344,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         playerY = maze.getStart().y;
         direction = Direction.STOPPED;
         rotationAngle = 0;
-        
+
         // Ne pas réinitialiser l'affichage de la solution lors du redémarrage
         // Conserver l'état actuel de showSolution
     }
 
 
-
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
 
     @Override
     public void draw(Canvas canvas) {
@@ -405,67 +410,67 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private void drawModernRestartButton(Canvas canvas) {
         // Mettre à jour l'animation de pulsation
         updatePulseAnimation();
-        
+
         // Paramètres du bouton - simplifié mais moderne
-        int buttonSize = (int)(cellSize * 1.7f);
+        int buttonSize = (int) (cellSize * 1.7f);
         int margin = cellSize / 2;
-        
+
         // Position du bouton dans le coin inférieur droit
-        int centerX = canvas.getWidth() - buttonSize/2 - margin;
-        int centerY = canvas.getHeight() - buttonSize/2 - margin * 2;
-        
+        int centerX = canvas.getWidth() - buttonSize / 2 - margin;
+        int centerY = canvas.getHeight() - buttonSize / 2 - margin * 2;
+
         // Animation de pulsation simple
         float pulseFactor = 1.0f + (float) Math.sin(System.currentTimeMillis() / 800.0) * 0.07f;
-        int pulsingButtonSize = (int)(buttonSize * pulseFactor);
-        
+        int pulsingButtonSize = (int) (buttonSize * pulseFactor);
+
         // Position du texte sous le bouton
-        float textY = centerY + buttonSize/2 + cellSize/2;
-        
+        float textY = centerY + buttonSize / 2 + cellSize / 2;
+
         // Zone tactile étendue pour inclure le texte
         restartButtonTouchArea = new RectF(
-            centerX - buttonSize/2 - margin/3,
-            centerY - buttonSize/2 - margin/3,
-            centerX + buttonSize/2 + margin/3,
-            textY + cellSize/3
+                centerX - buttonSize / 2 - margin / 3,
+                centerY - buttonSize / 2 - margin / 3,
+                centerX + buttonSize / 2 + margin / 3,
+                textY + cellSize / 3
         );
-        
+
         // Ombre simple pour effet de profondeur
         Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         shadowPaint.setColor(Color.BLACK);
         shadowPaint.setAlpha(50);
-        canvas.drawCircle(centerX + 3, centerY + 3, pulsingButtonSize/2 + 2, shadowPaint);
-        
+        canvas.drawCircle(centerX + 3, centerY + 3, pulsingButtonSize / 2 + 2, shadowPaint);
+
         // Fond du bouton avec dégradé moderne mais simple
         Paint buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        
+
         // Dégradé radial pour un effet 3D subtil
         RadialGradient gradient = new RadialGradient(
-            centerX - pulsingButtonSize/5,
-            centerY - pulsingButtonSize/5,
-            pulsingButtonSize,
-            new int[] {
-                Color.parseColor("#3B82F6"),  // Bleu vif
-                Color.parseColor("#2563EB"),  // Bleu principal
-                Color.parseColor("#1D4ED8")   // Bleu foncé
-            },
-            new float[] {0.3f, 0.6f, 1.0f},
-            Shader.TileMode.CLAMP
+                centerX - pulsingButtonSize / 5,
+                centerY - pulsingButtonSize / 5,
+                pulsingButtonSize,
+                new int[]{
+                        Color.parseColor("#3B82F6"),  // Bleu vif
+                        Color.parseColor("#2563EB"),  // Bleu principal
+                        Color.parseColor("#1D4ED8")   // Bleu foncé
+                },
+                new float[]{0.3f, 0.6f, 1.0f},
+                Shader.TileMode.CLAMP
         );
-        
+
         buttonPaint.setShader(gradient);
-        canvas.drawCircle(centerX, centerY, pulsingButtonSize/2, buttonPaint);
-        
+        canvas.drawCircle(centerX, centerY, pulsingButtonSize / 2, buttonPaint);
+
         // Contour léger pour définition
         Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         strokePaint.setStyle(Paint.Style.STROKE);
         strokePaint.setStrokeWidth(2);
         strokePaint.setColor(Color.WHITE);
         strokePaint.setAlpha(100);
-        canvas.drawCircle(centerX, centerY, pulsingButtonSize/2 - 1, strokePaint);
-        
+        canvas.drawCircle(centerX, centerY, pulsingButtonSize / 2 - 1, strokePaint);
+
         // Dessiner l'icône de restart
-        int iconSize = (int)(pulsingButtonSize * 0.7f);
-        
+        int iconSize = (int) (pulsingButtonSize * 0.7f);
+
         if (restartIcon == null || restartIcon.getWidth() != iconSize) {
             try {
                 Drawable drawable = getContext().getDrawable(R.drawable.restart_icon_modern);
@@ -480,24 +485,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 restartIcon = null;
             }
         }
-        
+
         if (restartIcon != null) {
             Paint iconPaint = new Paint();
-            float iconX = centerX - iconSize/2;
-            float iconY = centerY - iconSize/2;
+            float iconX = centerX - iconSize / 2;
+            float iconY = centerY - iconSize / 2;
             canvas.drawBitmap(restartIcon, iconX, iconY, iconPaint);
         }
-        
+
         // Texte RESTART clairement visible
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(cellSize/3);
+        textPaint.setTextSize(cellSize / 3);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setShadowLayer(3, 1, 1, Color.BLACK);
-        
+
         // Dessiner le texte
         canvas.drawText("RESTART", centerX, textY, textPaint);
-        
+
         // Effet ripple sur interaction
         updateAndDrawRippleEffect(canvas);
     }
@@ -510,9 +515,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         if (currentTime - lastPulseTime < PULSE_INTERVAL) {
             return; // Pas encore temps de mettre à jour
         }
-        
+
         lastPulseTime = currentTime;
-        
+
         if (pulseGrowing) {
             pulseFactor += PULSE_STEP;
             if (pulseFactor >= PULSE_MAX) {
@@ -537,7 +542,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         rippleCenterX = x;
         rippleCenterY = y;
         rippleStartTime = System.currentTimeMillis();
-        
+
         // Calculer le rayon maximum en fonction de la taille du bouton
         if (restartButtonTouchArea != null) {
             float width = restartButtonTouchArea.width();
@@ -547,7 +552,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             maxRippleRadius = cellSize * 2;
         }
     }
-    
+
     /**
      * Met à jour et dessine l'effet de ripple si actif
      */
@@ -555,24 +560,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         if (!isRippleActive) {
             return;
         }
-        
+
         long elapsedTime = System.currentTimeMillis() - rippleStartTime;
         if (elapsedTime > RIPPLE_DURATION) {
             isRippleActive = false;
             return;
         }
-        
+
         // Calculer le rayon actuel et l'opacité en fonction du temps écoulé
         float progress = Math.min(1.0f, elapsedTime / (float) RIPPLE_DURATION);
         rippleRadius = maxRippleRadius * progress;
         int alpha = (int) (255 * (1.0f - progress));
-        
+
         // Dessiner le cercle de ripple
         Paint ripplePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         ripplePaint.setColor(Color.WHITE);
         ripplePaint.setAlpha(alpha);
         ripplePaint.setStyle(Paint.Style.FILL);
-        
+
         canvas.drawCircle(rippleCenterX, rippleCenterY, rippleRadius, ripplePaint);
     }
 
@@ -582,13 +587,23 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         return Math.abs(drawX - targetX) > 1 || Math.abs(drawY - targetY) > 1;
     }
 
+    private int getMoveSoundResId(int index) {
+        switch (index) {
+            case 0: return R.raw.move_sound_1;
+            case 1: return R.raw.move_sound_2;
+            case 2: return R.raw.move_sound_3;
+            default: return R.raw.move_sound_1;
+        }
+    }
+
+
     /**
      * Dessine les marqueurs du chemin de solution
      */
     private void drawSolutionPath(Canvas canvas) {
         Set<Point> path = maze.getPath();
         if (path == null || path.isEmpty()) return;
-        
+
         // Créer un effet visuel pour le chemin - lignes connectant les points
         Paint linePaint = new Paint();
         linePaint.setColor(Color.parseColor("#FFD700"));  // Couleur or
@@ -596,16 +611,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         linePaint.setStrokeWidth(cellSize / 8);
         linePaint.setStrokeCap(Paint.Cap.ROUND);
         linePaint.setStyle(Paint.Style.STROKE);
-        
+
         // Dessiner des connexions entre les points adjacents
         // Pour cela, nous devons déterminer les points adjacents
         for (Point point : path) {
             if (maze.isObstacle(point.x, point.y)) continue;
-            
+
             // Coordonnées du point actuel
             int x1 = offsetX + point.x * cellSize + cellSize / 2;
             int y1 = offsetY + point.y * cellSize + cellSize / 2;
-            
+
             // Vérifier les quatre directions adjacentes
             Point[] adjacents = {
                 new Point(point.x + 1, point.y),  // Droite
@@ -613,43 +628,43 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 new Point(point.x, point.y + 1),  // Bas
                 new Point(point.x, point.y - 1)   // Haut
             };
-            
+
             for (Point adj : adjacents) {
                 // Si le point adjacent fait partie du chemin, dessiner une ligne
                 if (path.contains(adj) && !maze.isObstacle(adj.x, adj.y)) {
                     int x2 = offsetX + adj.x * cellSize + cellSize / 2;
                     int y2 = offsetY + adj.y * cellSize + cellSize / 2;
-                    
+
                     canvas.drawLine(x1, y1, x2, y2, linePaint);
                 }
             }
         }
-        
+
         // Dessiner les marqueurs pour chaque point du chemin
         Paint circlePaint = new Paint();
         circlePaint.setColor(Color.parseColor("#FFD700")); // Couleur or
         circlePaint.setAlpha(160); // Semi-transparent
         circlePaint.setStyle(Paint.Style.FILL);
-        
+
         int markerSize = cellSize / 4;
-        
+
         for (Point point : path) {
             // Ne pas dessiner de marqueur pour les obstacles (au cas où)
             if (maze.isObstacle(point.x, point.y)) continue;
-            
+
             int pixelX = offsetX + point.x * cellSize + cellSize / 2;
             int pixelY = offsetY + point.y * cellSize + cellSize / 2;
-            
+
             // Effet de halo autour du marqueur
             Paint haloPaint = new Paint();
             haloPaint.setColor(Color.parseColor("#FFD700"));
             haloPaint.setAlpha(40);
             haloPaint.setStyle(Paint.Style.FILL);
             canvas.drawCircle(pixelX, pixelY, markerSize * 1.5f, haloPaint);
-            
+
             // Dessiner un cercle pour chaque point du chemin
             canvas.drawCircle(pixelX, pixelY, markerSize/2, circlePaint);
-            
+
             // Point central blanc pour meilleure visibilité
             Paint centerPaint = new Paint();
             centerPaint.setColor(Color.WHITE);
@@ -657,45 +672,45 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             centerPaint.setStyle(Paint.Style.FILL);
             canvas.drawCircle(pixelX, pixelY, markerSize/5, centerPaint);
         }
-        
+
         // Mettre en évidence la position actuelle du joueur
         int playerPixelX = offsetX + playerX * cellSize + cellSize / 2;
         int playerPixelY = offsetY + playerY * cellSize + cellSize / 2;
-        
+
         Paint playerMarkerPaint = new Paint();
         playerMarkerPaint.setColor(Color.parseColor("#4ADE80"));  // Vert vif
         playerMarkerPaint.setStyle(Paint.Style.STROKE);
         playerMarkerPaint.setStrokeWidth(3);
         canvas.drawCircle(playerPixelX, playerPixelY, markerSize, playerMarkerPaint);
-        
+
         // Effet spécial pour le point d'arrivée
         Point goal = maze.getGoal();
         if (goal != null) {
             int goalX = offsetX + goal.x * cellSize + cellSize / 2;
             int goalY = offsetY + goal.y * cellSize + cellSize / 2;
-            
+
             // Effet de pulse sur le point d'arrivée
             float pulseFactor = 1.0f + (float) Math.sin(System.currentTimeMillis() / 300.0) * 0.2f;
-            
+
             Paint goalPaint = new Paint();
             goalPaint.setColor(Color.parseColor("#FFD700"));
             goalPaint.setStyle(Paint.Style.STROKE);
             goalPaint.setStrokeWidth(4);
             goalPaint.setAlpha(200);
-            
+
             canvas.drawCircle(goalX, goalY, markerSize * 1.5f * pulseFactor, goalPaint);
-            
+
             // Texte "SORTIE" près du point d'arrivée
             Paint exitTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             exitTextPaint.setColor(Color.parseColor("#FFD700"));
             exitTextPaint.setTextSize(cellSize / 3);
             exitTextPaint.setTextAlign(Paint.Align.CENTER);
             exitTextPaint.setShadowLayer(3, 1, 1, Color.BLACK);
-            
+
             // Calculer la position du texte en fonction de l'emplacement de la sortie
             float textX = goalX;
             float textY;
-            
+
             // Position du texte selon la position de la sortie
             if (goal.y == 0) {
                 textY = goalY - cellSize / 2; // Sortie en haut
@@ -708,7 +723,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 textY = goalY - cellSize / 2; // Sortie à droite
                 textX = goalX - cellSize / 2;
             }
-            
+
             // Dessiner le texte
             canvas.drawText("SORTIE", textX, textY, exitTextPaint);
         }
@@ -721,18 +736,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         // Paramètres du bouton
         int buttonSize = (int)(cellSize * 1.7f);
         int margin = cellSize / 2;
-        
+
         // Position du bouton dans le coin inférieur gauche (opposé au bouton restart)
         int centerX = buttonSize/2 + margin;
         int centerY = canvas.getHeight() - buttonSize/2 - margin * 2;
-        
+
         // Animation de pulsation simple
         float pulseFactor = 1.0f + (float) Math.sin(System.currentTimeMillis() / 800.0) * 0.07f;
         int pulsingButtonSize = (int)(buttonSize * pulseFactor);
-        
+
         // Position du texte sous le bouton
         float textY = centerY + buttonSize/2 + cellSize/2;
-        
+
         // Zone tactile
         solutionButtonTouchArea = new RectF(
             centerX - buttonSize/2 - margin/3,
@@ -740,16 +755,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             centerX + buttonSize/2 + margin/3,
             textY + cellSize/3
         );
-        
+
         // Ombre pour effet de profondeur
         Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         shadowPaint.setColor(Color.BLACK);
         shadowPaint.setAlpha(50);
         canvas.drawCircle(centerX + 3, centerY + 3, pulsingButtonSize/2 + 2, shadowPaint);
-        
+
         // Fond du bouton avec dégradé
         Paint buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        
+
         // Couleur du bouton différente selon l'état (activé/désactivé)
         int[] colors;
         if (showSolution) {
@@ -767,7 +782,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 Color.parseColor("#16A34A")   // Vert foncé
             };
         }
-        
+
         // Dégradé radial
         RadialGradient gradient = new RadialGradient(
             centerX - pulsingButtonSize/5,
@@ -777,10 +792,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             new float[] {0.3f, 0.6f, 1.0f},
             Shader.TileMode.CLAMP
         );
-        
+
         buttonPaint.setShader(gradient);
         canvas.drawCircle(centerX, centerY, pulsingButtonSize/2, buttonPaint);
-        
+
         // Contour léger
         Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         strokePaint.setStyle(Paint.Style.STROKE);
@@ -788,10 +803,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         strokePaint.setColor(Color.WHITE);
         strokePaint.setAlpha(100);
         canvas.drawCircle(centerX, centerY, pulsingButtonSize/2 - 1, strokePaint);
-        
+
         // Dessiner l'icône
         int iconSize = (int)(pulsingButtonSize * 0.7f);
-        
+
         if (solutionIcon == null || solutionIcon.getWidth() != iconSize) {
             try {
                 Drawable drawable = getContext().getDrawable(R.drawable.solution_icon);
@@ -806,21 +821,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 solutionIcon = null;
             }
         }
-        
+
         if (solutionIcon != null) {
             Paint iconPaint = new Paint();
             float iconX = centerX - iconSize/2;
             float iconY = centerY - iconSize/2;
             canvas.drawBitmap(solutionIcon, iconX, iconY, iconPaint);
         }
-        
+
         // Texte "SOLUTION"
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.WHITE);
         textPaint.setTextSize(cellSize/3);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setShadowLayer(3, 1, 1, Color.BLACK);
-        
+
         // Dessiner le texte
         canvas.drawText(showSolution ? "CACHER" : "SOLUTION", centerX, textY, textPaint);
     }
