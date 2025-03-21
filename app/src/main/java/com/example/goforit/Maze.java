@@ -197,4 +197,8 @@ public class Maze {
     public int getSize() {
         return size;
     }
+
+    public Set<Point> getPath() {
+        return path;
+    }
 }

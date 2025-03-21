@@ -52,6 +52,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private int level;
     private int rotationAngle = 0;
     private Maze maze;
+    private RectF solutionButtonArea;
     private int offsetX;
     private int offsetY;
     private float drawX;
@@ -60,6 +61,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private float currentRotationAngle = 0;
     private static final float ROTATION_SPEED = 100.0f;
 
+    private boolean showSolution = false;
+
+    private Paint solutionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Direction lastMoveDirection = Direction.STOPPED;
 
     private Rect restartButton;
@@ -216,6 +220,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         stoneBitmapBall = Bitmap.createScaledBitmap(stoneBitmapBall, newWidth, newHeight, true);
         doorBitmap = Bitmap.createScaledBitmap(doorBitmap, newWidth, newHeight, true);
 
+
+        solutionPaint.setStyle(Paint.Style.STROKE);
+        solutionPaint.setStrokeWidth(cellSize / 3);
+        solutionPaint.setShader(new LinearGradient(0, 0, cellSize * gridSize, cellSize * gridSize,
+                new int[]{Color.CYAN, Color.MAGENTA, Color.YELLOW},
+                null, Shader.TileMode.MIRROR));
         thread.setRunning(true);
         thread.start();
     }
@@ -281,17 +291,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             float x = event.getX();
             float y = event.getY();
-            
+
             if (restartButtonTouchArea != null && restartButtonTouchArea.contains(x, y)) {
-                // Démarrer l'effet de ripple
                 startRippleEffect(x, y);
-                
-                // Redémarrer le jeu
                 restartGame();
                 return true;
             }
-            
-            // Reste du code pour les mouvements de balle...
+
+            if (solutionButtonArea != null && solutionButtonArea.contains(x, y)) {
+                showSolution = !showSolution;
+                return true;
+            }
         }
         return super.onTouchEvent(event);
     }
@@ -339,6 +349,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
         }
 
+
+        if (showSolution) {
+            drawSolutionPath(canvas);
+        }
+
         // Draw the player with rotation
         int pixelX = offsetX + (int) drawX;
         int pixelY = offsetY + (int) drawY;
@@ -349,6 +364,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         canvas.restore();
 
         drawModernRestartButton(canvas);
+        drawSolutionToggleButton(canvas);
+
     }
 
     /**
@@ -533,5 +550,63 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         float targetX = playerX * cellSize;
         float targetY = playerY * cellSize;
         return Math.abs(drawX - targetX) > 1 || Math.abs(drawY - targetY) > 1;
+    }
+
+    private void drawSolutionPath(Canvas canvas) {
+        Path solution = new Path();
+        boolean started = false;
+        for (Point p : maze.getPath()) {
+            float px = offsetX + p.x * cellSize + cellSize / 2f;
+            float py = offsetY + p.y * cellSize + cellSize / 2f;
+            if (!started) {
+                solution.moveTo(px, py);
+                started = true;
+            } else {
+                solution.lineTo(px, py);
+            }
+        }
+        canvas.drawPath(solution, solutionPaint);
+    }
+
+    private void drawSolutionToggleButton(Canvas canvas) {
+        int buttonSize = (int)(cellSize * 1.7f);
+        int margin = cellSize / 2;
+
+        int centerX = buttonSize / 2 + margin;
+        int centerY = canvas.getHeight() - buttonSize / 2 - margin * 2;
+
+        solutionButtonArea = new RectF(
+                centerX - buttonSize / 2 - margin / 3,
+                centerY - buttonSize / 2 - margin / 3,
+                centerX + buttonSize / 2 + margin / 3,
+                centerY + buttonSize / 2 + margin / 3
+        );
+
+        Paint buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        RadialGradient gradient = new RadialGradient(
+                centerX - buttonSize / 5,
+                centerY - buttonSize / 5,
+                buttonSize,
+                new int[]{Color.parseColor("#10B981"), Color.parseColor("#059669"), Color.parseColor("#047857")},
+                new float[]{0.3f, 0.6f, 1.0f},
+                Shader.TileMode.CLAMP
+        );
+        buttonPaint.setShader(gradient);
+
+        canvas.drawCircle(centerX, centerY, buttonSize / 2, buttonPaint);
+
+        Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        strokePaint.setStyle(Paint.Style.STROKE);
+        strokePaint.setStrokeWidth(2);
+        strokePaint.setColor(Color.WHITE);
+        strokePaint.setAlpha(100);
+        canvas.drawCircle(centerX, centerY, buttonSize / 2 - 1, strokePaint);
+
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(cellSize / 3);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setShadowLayer(3, 1, 1, Color.BLACK);
+        canvas.drawText(showSolution ? "HIDE" : "SHOW", centerX, centerY + cellSize / 6, textPaint);
     }
 }
