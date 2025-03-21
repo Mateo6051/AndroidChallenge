@@ -39,6 +39,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private Bitmap stoneBitmapStone;
     private Bitmap stoneBitmapBall;
 
+    private Bitmap doorBitmap;
     private int gridSize;
     private Bitmap backgroundImage;
     private int level;
@@ -136,10 +137,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
         stoneBitmapStone = BitmapFactory.decodeResource(getResources(), R.drawable.stone_icon);
         stoneBitmapBall = BitmapFactory.decodeResource(getResources(), R.drawable.red_ball);
+        doorBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.door);
         int newWidth = cellSize;
         int newHeight = cellSize;
         stoneBitmapStone = Bitmap.createScaledBitmap(stoneBitmapStone, newWidth, newHeight, true);
         stoneBitmapBall = Bitmap.createScaledBitmap(stoneBitmapBall, newWidth, newHeight, true);
+        doorBitmap = Bitmap.createScaledBitmap(doorBitmap, newWidth, newHeight, true);
 
         thread.setRunning(true);
         thread.start();
@@ -212,7 +215,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         int totalSize = cellSize * (gridSize + 2);
         Rect destRect = new Rect(offsetX, offsetY, offsetX + totalSize, offsetY + totalSize);
 
-        // Dessiner l'image de fond ou un fond blanc
+        // Draw background image or white background
         if (backgroundImage != null) {
             canvas.drawBitmap(backgroundImage, null, destRect, null);
         } else {
@@ -221,24 +224,23 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
         Paint paint = new Paint();
 
-        // Dessiner obstacles et sortie
+        // Draw obstacles and exit
         for (int i = 0; i < gridSize + 2; i++) {
             for (int j = 0; j < gridSize + 2; j++) {
                 int pixelX = offsetX + i * cellSize;
                 int pixelY = offsetY + j * cellSize;
 
                 if (maze.isGoal(i, j)) {
-                    // Dessiner la sortie en vert
-                    paint.setColor(Color.GREEN);
-                    canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
+                    // Draw the door icon instead of a green square
+                    canvas.drawBitmap(doorBitmap, pixelX, pixelY, null);
                 } else if (maze.isObstacle(i, j)) {
-                    // Dessiner les obstacles avec Bitmap
+                    // Draw obstacles with stone bitmap
                     canvas.drawBitmap(stoneBitmapStone, pixelX, pixelY, null);
                 }
             }
         }
 
-        // Dessiner le joueur avec rotation
+        // Draw the player with rotation
         int pixelX = offsetX + playerX * cellSize;
         int pixelY = offsetY + playerY * cellSize;
 
