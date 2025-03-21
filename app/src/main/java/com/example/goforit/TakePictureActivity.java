@@ -19,15 +19,18 @@ public class TakePictureActivity extends Activity {
     private ImageView imageView;
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     private Button btnStartTheGame;
-    private Bitmap imageBitmap; // Stocker la photo pour la passer à GameView
+    private Bitmap imageBitmap;
+    private int level;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_take_picture);
 
+        level = getIntent().getIntExtra("level", 1); // Récupérer le niveau
+
         btnStartTheGame = findViewById(R.id.btnStartTheGame);
-        btnStartTheGame.setText("Commencer"); // Renommer le bouton
+        btnStartTheGame.setText("Commencer");
         btnStartTheGame.setVisibility(View.GONE);
 
         imageView = findViewById(R.id.imageView);
@@ -36,12 +39,13 @@ public class TakePictureActivity extends Activity {
 
         btnTakePhoto.setOnClickListener(v -> checkCameraPermission());
 
-        // Ajouter le listener pour lancer GameView
         btnStartTheGame.setOnClickListener(v -> {
-            Intent intent = new Intent(TakePictureActivity.this, GameActivity.class); // Nouvelle activité pour GameView
-            intent.putExtra("background_image", imageBitmap); // Passer l'image
+            Intent intent = new Intent(TakePictureActivity.this, GameActivity.class);
+            intent.putExtra("background_image", imageBitmap);
+            intent.putExtra("level", level);
+            intent.putExtra("gridSize", 10 + (level - 1) * 2); // Taille augmente de 2 par niveau
             startActivity(intent);
-            finish(); // Terminer TakePictureActivity
+            finish();
         });
     }
 
@@ -67,7 +71,7 @@ public class TakePictureActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
-            imageBitmap = (Bitmap) extras.get("data"); // Stocker l'image
+            imageBitmap = (Bitmap) extras.get("data");
             imageView.setVisibility(View.VISIBLE);
             imageView.setImageBitmap(imageBitmap);
             btnStartTheGame.setVisibility(View.VISIBLE);

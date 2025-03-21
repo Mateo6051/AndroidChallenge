@@ -1,5 +1,6 @@
 package com.example.goforit;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -19,9 +20,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private int playerX = 0;
     private int playerY = 0;
     private int valeur_y;
-    private boolean[][] obstacles; // Grille d'obstacles de taille variable
+    private boolean[][] obstacles;
     private Direction direction = Direction.RIGHT;
     private Bitmap backgroundImage;
+    private int level;
 
     private float touchX, touchY;
     private static final int SWIPE_THRESHOLD = 50;
@@ -30,7 +32,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private static final int MOVE_DELAY = 5;
 
     private int cellSize;
-    private int gridSize; // Taille de la grille (nombre de cases)
+    private int gridSize;
 
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
@@ -40,17 +42,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         super(context);
         this.valeur_y = valeur_y;
         this.backgroundImage = backgroundImage;
-        this.gridSize = gridSize; // Taille de la grille passée en paramètre
-        this.obstacles = new boolean[gridSize][gridSize]; // Initialiser la grille avec la taille donnée
+        this.gridSize = gridSize;
+        this.obstacles = new boolean[gridSize][gridSize];
+        this.level = ((Activity) context).getIntent().getIntExtra("level", 1);
         getHolder().addCallback(this);
         thread = new GameThread(getHolder(), this);
         setFocusable(true);
 
-        // Initialisation des obstacles (exemple pour une grille quelconque)
-        if (gridSize >= 10) { // S'assurer que les indices sont valides
+        if (gridSize >= 10) {
             obstacles[3][4] = true;
             obstacles[7][8] = true;
-            obstacles[gridSize - 1][gridSize - 1] = true; // Sortie au coin inférieur droit
+            obstacles[gridSize - 1][gridSize - 1] = true;
         }
 
         calculateCellSize();
@@ -59,7 +61,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private void calculateCellSize() {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
-        cellSize = Math.min(screenWidth, screenHeight) / gridSize; // Ajuster la taille des cases
+        cellSize = Math.min(screenWidth, screenHeight) / gridSize;
     }
 
     @Override
@@ -84,6 +86,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             }
             retry = false;
         }
+        setFocusable(false); // Désactiver le focus pour libérer les événements tactiles
     }
 
     @Override
@@ -153,9 +156,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 break;
         }
 
-        // Vérifier les limites avec la taille de grille dynamique
         if (nextX < 0 || nextX >= gridSize || nextY < 0 || nextY >= gridSize) {
             direction = Direction.STOPPED;
+            return;
+        }
+
+        if (nextX == gridSize - 1 && nextY == gridSize - 1) {
+            direction = Direction.STOPPED;
+            Intent intent = new Intent(getContext(), NextLevelScreen.class);
+            intent.putExtra("level", level);
+            getContext().startActivity(intent);
+            ((Activity) getContext()).finish();
             return;
         }
 
@@ -172,9 +183,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void draw(Canvas canvas) {
         super.draw(canvas);
         if (canvas != null) {
-            // Dessiner l'image de fond en l'étirant pour couvrir toute la grille
             if (backgroundImage != null) {
-                int totalSize = cellSize * gridSize; // Taille totale de la grille
+                int totalSize = cellSize * gridSize;
                 Rect destRect = new Rect(0, 0, totalSize, totalSize);
                 canvas.drawBitmap(backgroundImage, null, destRect, null);
             } else {
@@ -183,7 +193,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
             Paint paint = new Paint();
             paint.setColor(Color.rgb(250, 0, 0));
-
             int pixelX = playerX * cellSize;
             int pixelY = playerY * cellSize;
             canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);

@@ -17,7 +17,8 @@ public class GameActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         Bitmap backgroundImage = getIntent().getParcelableExtra("background_image");
-        int gridSize = 20; // Taille par défaut, modifiable
+        int level = getIntent().getIntExtra("level", 1);
+        int gridSize = getIntent().getIntExtra("gridSize", 10); // Récupérer la taille dynamique
         GameView gameView = new GameView(this, 0, backgroundImage, gridSize);
         setContentView(gameView);
     }
