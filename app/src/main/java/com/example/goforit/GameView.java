@@ -22,29 +22,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private int valeur_y;
     private boolean[][] obstacles = new boolean[10][10];
     private Direction direction = Direction.STOPPED;
-
-    // Gestion du gyroscope
     private SensorManager sensorManager;
     private Sensor gyroscope;
     private float tiltThreshold = 1.5f;
     private float neutralZone = 0.8f;
     private long lastDirectionChange = 0;
     private static final long DIRECTION_CHANGE_COOLDOWN = 500;
-    
-    // Filtre pour les valeurs du gyroscope
     private float[] lastGyroValues = new float[2];
     private static final float ALPHA = 0.8f;
-
-    // Contrôle de la vitesse
     private int moveCounter = 0;
     private static final int MOVE_DELAY = 5;
-
     private int cellSize;
-
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
-
     public GameView(Context context, int valeur_y) {
         super(context);
         this.valeur_y = valeur_y;
@@ -52,12 +43,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         thread = new GameThread(getHolder(), this);
         setFocusable(true);
 
-        // Initialisation des obstacles
         obstacles[3][4] = true;
         obstacles[7][8] = true;
         obstacles[9][9] = true;
 
-        // Initialisation du gyroscope
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         if (gyroscope == null) {
@@ -101,41 +90,32 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         }
     }
 
-    // Application d'un filtre passe-bas pour lisser les valeurs du gyroscope
     private float[] filterGyroValues(float[] values) {
         lastGyroValues[0] = ALPHA * lastGyroValues[0] + (1 - ALPHA) * values[0];
         lastGyroValues[1] = ALPHA * lastGyroValues[1] + (1 - ALPHA) * values[1];
         return lastGyroValues;
     }
 
-    // Gestion des données du gyroscope
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE && direction == Direction.STOPPED) {
-            // Appliquer un filtre pour réduire le bruit
             float[] filteredValues = filterGyroValues(event.values);
-            float x = filteredValues[0]; // Rotation autour de l'axe X 
-            float y = filteredValues[1]; // Rotation autour de l'axe Y
+            float x = filteredValues[0];
+            float y = filteredValues[1];
             long currentTime = System.currentTimeMillis();
 
-            // Vérifier le cooldown pour éviter les changements trop rapides
             if (currentTime - lastDirectionChange < DIRECTION_CHANGE_COOLDOWN) {
                 return;
             }
 
-            // Si l'inclinaison est trop faible (position neutre), ignorer
             if (Math.abs(x) < neutralZone && Math.abs(y) < neutralZone) {
                 return;
             }
 
-            // Déterminer la direction en fonction de l'inclinaison
             Direction newDirection = Direction.STOPPED;
             
-            // Vérifier si l'inclinaison est suffisamment forte
             if (Math.abs(x) > tiltThreshold || Math.abs(y) > tiltThreshold) {
-                // N'accepter que la composante dominante
                 if (Math.abs(x) > Math.abs(y) * 1.2) { // 20% plus forte
-                    // Inversion de UP et DOWN
                     newDirection = (x < 0) ? Direction.UP : Direction.DOWN;
                 } else if (Math.abs(y) > Math.abs(x) * 1.2) { // 20% plus forte
                     newDirection = (y < 0) ? Direction.LEFT : Direction.RIGHT;
@@ -152,7 +132,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Pas besoin d'implémentation spécifique
+        // Pas besoin d'implémentation spécifique pour le moment
     }
 
     public void update() {
