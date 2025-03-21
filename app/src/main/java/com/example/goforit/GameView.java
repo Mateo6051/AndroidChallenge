@@ -1,9 +1,15 @@
 package com.example.goforit;
 
+import android.app.Activity;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.view.MotionEvent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -17,11 +23,11 @@ import androidx.annotation.NonNull;
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, SensorEventListener {
     private static final String TAG = "GameView";
     private GameThread thread;
-    private int playerX = 0;
-    private int playerY = 0;
-    private int valeur_y;
-    private boolean[][] obstacles = new boolean[10][10];
-    private Direction direction = Direction.STOPPED;
+    private int playerX = 0; // Position x du joueur dans la grille (0-9)
+    private int playerY = 0; // Position y du joueur dans la grille (0-9)
+    private int valeur_y; // Gardé pour compatibilité avec MainActivity
+    private boolean[][] obstacles = new boolean[10][10]; // Grille 10x10 pour obstacles
+    private Direction direction = Direction.RIGHT; // Direction initiale
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private float tiltThreshold = 2.0f;
@@ -30,22 +36,35 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private static final long DIRECTION_CHANGE_COOLDOWN = 500;
     private float[] lastAccValues = new float[3];
     private static final float ALPHA = 0.8f;
+    // Contrôle de la vitesse
     private int moveCounter = 0;
     private static final int MOVE_DELAY = 5;
+
     private int cellSize;
+    private int gridSize;
+    private Bitmap backgroundImage;
+    private int level;
+
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
-    public GameView(Context context, int valeur_y) {
+
+    public GameView(Context context, int valeur_y, Bitmap backgroundImage, int gridSize) {
         super(context);
         this.valeur_y = valeur_y;
+        this.backgroundImage = backgroundImage;
+        this.gridSize = gridSize;
+        this.obstacles = new boolean[gridSize][gridSize];
+        this.level = ((Activity) context).getIntent().getIntExtra("level", 1);
         getHolder().addCallback(this);
         thread = new GameThread(getHolder(), this);
         setFocusable(true);
 
-        obstacles[3][4] = true;
-        obstacles[7][8] = true;
-        obstacles[9][9] = true;
+        if (gridSize >= 10) {
+            obstacles[3][4] = true;
+            obstacles[7][8] = true;
+            obstacles[gridSize - 1][gridSize - 1] = true;
+        }
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -62,7 +81,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private void calculateCellSize() {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
-        cellSize = Math.min(screenWidth, screenHeight) / 10;
+        cellSize = Math.min(screenWidth, screenHeight) / gridSize;
     }
 
     @Override
@@ -88,6 +107,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
             retry = false;
         }
+        setFocusable(false); // Désactiver le focus pour libérer les événements tactiles
     }
 
     private float[] filterAccValues(float[] values) {
@@ -119,7 +139,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
 
             Direction newDirection = Direction.STOPPED;
-            
+
             if (Math.abs(x) > Math.abs(y)) {
                 if (Math.abs(x) > tiltThreshold) {
                     newDirection = (x > 0) ? Direction.LEFT : Direction.RIGHT;
@@ -172,9 +192,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 break;
         }
 
-        if (nextX < 0 || nextX >= 10 || nextY < 0 || nextY >= 10) {
-            Log.d(TAG, "Collision avec un mur détectée");
+        if (nextX < 0 || nextX >= gridSize || nextY < 0 || nextY >= gridSize) {
             direction = Direction.STOPPED;
+            return;
+        }
+
+        if (nextX == gridSize - 1 && nextY == gridSize - 1) {
+            direction = Direction.STOPPED;
+            Intent intent = new Intent(getContext(), NextLevelScreen.class);
+            intent.putExtra("level", level);
+            getContext().startActivity(intent);
+            ((Activity) getContext()).finish();
             return;
         }
 
@@ -192,7 +220,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     public void draw(Canvas canvas) {
         super.draw(canvas);
         if (canvas != null) {
-            canvas.drawColor(Color.WHITE);
+            if (backgroundImage != null) {
+                int totalSize = cellSize * gridSize;
+                Rect destRect = new Rect(0, 0, totalSize, totalSize);
+                canvas.drawBitmap(backgroundImage, null, destRect, null);
+            } else {
+                canvas.drawColor(Color.WHITE);
+            }
+
             Paint paint = new Paint();
             paint.setColor(Color.rgb(250, 0, 0));
 
@@ -201,8 +236,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
 
             paint.setColor(Color.BLACK);
-            for (int i = 0; i < 10; i++) {
-                for (int j = 0; j < 10; j++) {
+            for (int i = 0; i < gridSize; i++) {
+                for (int j = 0; j < gridSize; j++) {
                     if (obstacles[i][j]) {
                         canvas.drawRect(i * cellSize, j * cellSize,
                                 i * cellSize + cellSize, j * cellSize + cellSize, paint);

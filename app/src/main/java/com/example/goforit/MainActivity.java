@@ -15,6 +15,7 @@ public class MainActivity extends Activity {
         Button btnStart = findViewById(R.id.btnStart);
         btnStart.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, TakePictureActivity.class);
+            intent.putExtra("level", 1); // Niveau initial
             startActivity(intent);
         });
     }

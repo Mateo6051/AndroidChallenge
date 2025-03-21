@@ -19,20 +19,34 @@ public class TakePictureActivity extends Activity {
     private ImageView imageView;
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     private Button btnStartTheGame;
+    private Bitmap imageBitmap;
+    private int level;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_take_picture);
 
+        level = getIntent().getIntExtra("level", 1); // Récupérer le niveau
+
         btnStartTheGame = findViewById(R.id.btnStartTheGame);
+        btnStartTheGame.setText("Commencer");
         btnStartTheGame.setVisibility(View.GONE);
 
         imageView = findViewById(R.id.imageView);
-        imageView.setVisibility(View.GONE);;
+        imageView.setVisibility(View.GONE);
         Button btnTakePhoto = findViewById(R.id.btnTakePhoto);
 
         btnTakePhoto.setOnClickListener(v -> checkCameraPermission());
+
+        btnStartTheGame.setOnClickListener(v -> {
+            Intent intent = new Intent(TakePictureActivity.this, GameActivity.class);
+            intent.putExtra("background_image", imageBitmap);
+            intent.putExtra("level", level);
+            intent.putExtra("gridSize", 10 + (level - 1) * 2); // Taille augmente de 2 par niveau
+            startActivity(intent);
+            finish();
+        });
     }
 
     private void checkCameraPermission() {
@@ -57,7 +71,7 @@ public class TakePictureActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            imageBitmap = (Bitmap) extras.get("data");
             imageView.setVisibility(View.VISIBLE);
             imageView.setImageBitmap(imageBitmap);
             btnStartTheGame.setVisibility(View.VISIBLE);
