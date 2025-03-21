@@ -49,7 +49,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
-    public GameView(Context context, int valeur_y) {
+    public GameView(Context context, int valeur_y, Bitmap backgroundImage, int gridSize) {
         super(context);
         this.valeur_y = valeur_y;
         this.backgroundImage = backgroundImage;
