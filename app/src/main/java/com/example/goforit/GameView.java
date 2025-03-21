@@ -54,6 +54,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         super(context);
         maze = new Maze();
         maze.generateMaze(10, 8);
+        playerX = maze.getStart().x - 1;
+        playerY = maze.getStart().y - 1;
+
+
         this.valeur_y = valeur_y;
         this.backgroundImage = backgroundImage;
         this.gridSize = gridSize;
@@ -62,12 +66,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         getHolder().addCallback(this);
         thread = new GameThread(getHolder(), this);
         setFocusable(true);
-
-//        if (gridSize >= 10) {
-//            obstacles[3][4] = true;
-//            obstacles[7][8] = true;
-//            obstacles[gridSize - 1][gridSize - 1] = true;
-//        }
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -206,7 +204,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             return;
         }
 
-        if (obstacles[nextX][nextY]) {
+        if (maze.isObstacle(nextX + 1, nextY + 1)) {
             Log.d(TAG, "Collision avec un obstacle détectée");
             direction = Direction.STOPPED;
             return;

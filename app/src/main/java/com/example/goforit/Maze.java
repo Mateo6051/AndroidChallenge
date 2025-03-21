@@ -153,6 +153,9 @@ public class Maze {
         return start != null && start.x == x && start.y == y;
     }
 
+    public Point getStart() {
+        return start;
+    }
     public int getSize() {
         return size;
     }
