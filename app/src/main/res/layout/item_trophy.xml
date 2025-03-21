@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    style="@style/NeumorphicCardStyle"
+    android:background="@drawable/neumorphic_card">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Trophée avec effet élégant -->
+        <FrameLayout
+            android:layout_width="70dp"
+            android:layout_height="70dp">
+            
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                style="@style/NeumorphicCardStyle"
+                android:background="@drawable/neumorphic_card">
+                
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                    
+                    <ImageView
+                        android:id="@+id/trophyIcon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/trophy_gold"
+                        android:padding="12dp"
+                        android:contentDescription="Trophée" />
+                        
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/trophy_elegant"
+                        android:alpha="0.3" />
+        
+                    <TextView
+                        android:id="@+id/trophyLevel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="1"
+                        android:textColor="@color/primary_text"
+                        android:textSize="22sp"
+                        android:fontFamily="@font/montserrat_bold"
+                        android:alpha="0.8" />
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/trophyTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Niveau 1 Terminé"
+                android:textColor="@color/primary_text"
+                android:textSize="17sp"
+                android:fontFamily="@font/roboto_medium"
+                android:letterSpacing="0.02" />
+
+            <TextView
+                android:id="@+id/trophyDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vous avez terminé le niveau 1 avec succès !"
+                android:textColor="@color/secondary_text"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/roboto"
+                android:lineSpacingExtra="2dp" />
+
+            <TextView
+                android:id="@+id/trophyDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Obtenu le 01/04/2023"
+                android:textColor="@color/accent"
+                android:textSize="12sp"
+                android:fontFamily="@font/roboto"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- Icône avec effet circulaire -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="2dp"
+            android:layout_gravity="center_vertical"
+            app:cardBackgroundColor="@color/glass_effect">
+            
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@android:drawable/ic_menu_info_details"
+                android:layout_gravity="center"
+                android:tint="@color/secondary_text"
+                android:contentDescription="Détails du trophée" />
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+</androidx.cardview.widget.CardView> 

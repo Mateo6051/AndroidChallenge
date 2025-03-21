@@ -24,9 +24,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".TakePictureActivity" />
-        <activity android:name=".GameActivity" />
-        <activity android:name=".NextLevelScreen" />
+        <activity android:name=".TakePictureActivity" android:exported="false"/>
+        <activity android:name=".GameActivity" android:exported="false"/>
+        <activity android:name=".NextLevelScreen" android:exported="false"/>
+        <activity android:name=".TrophyCollectionActivity" android:exported="false"/>
     </application>
 
 </manifest>
