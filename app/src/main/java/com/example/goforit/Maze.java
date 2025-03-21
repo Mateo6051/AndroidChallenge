@@ -194,6 +194,23 @@ public class Maze {
     public Point getStart() {
         return start;
     }
+    
+    /**
+     * Récupère le chemin complet du labyrinthe
+     * @return L'ensemble des points formant le chemin
+     */
+    public Set<Point> getPath() {
+        return path;
+    }
+    
+    /**
+     * Récupère le point d'arrivée du labyrinthe
+     * @return Le point représentant la sortie
+     */
+    public Point getGoal() {
+        return goal;
+    }
+    
     public int getSize() {
         return size;
     }
