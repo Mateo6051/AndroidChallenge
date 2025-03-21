@@ -1,9 +1,12 @@
 package com.example.goforit;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -13,50 +16,50 @@ import androidx.annotation.NonNull;
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private GameThread thread;
-    private int playerX = 0; // Position x du joueur dans la grille (0-9)
-    private int playerY = 0; // Position y du joueur dans la grille (0-9)
-    private int valeur_y; // Gardé pour compatibilité avec MainActivity
-    private boolean[][] obstacles = new boolean[10][10]; // Grille 10x10 pour obstacles
-    private Direction direction = Direction.RIGHT; // Direction initiale
+    private int playerX = 0;
+    private int playerY = 0;
+    private int valeur_y;
+    private boolean[][] obstacles; // Grille d'obstacles de taille variable
+    private Direction direction = Direction.RIGHT;
+    private Bitmap backgroundImage;
 
-    // Variables pour détecter le swipe
-    private float touchX, touchY; // Point de départ du swipe
-    private static final int SWIPE_THRESHOLD = 50; // Distance minimale pour valider un swipe
+    private float touchX, touchY;
+    private static final int SWIPE_THRESHOLD = 50;
 
-    // Contrôle de la vitesse
     private int moveCounter = 0;
     private static final int MOVE_DELAY = 5;
 
-    // Taille dynamique des cases
-    private int cellSize; // Taille d'une case en pixels, calculée selon l'écran
+    private int cellSize;
+    private int gridSize; // Taille de la grille (nombre de cases)
 
-    // Enum pour les directions
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
 
-    public GameView(Context context, int valeur_y) {
+    public GameView(Context context, int valeur_y, Bitmap backgroundImage, int gridSize) {
         super(context);
         this.valeur_y = valeur_y;
+        this.backgroundImage = backgroundImage;
+        this.gridSize = gridSize; // Taille de la grille passée en paramètre
+        this.obstacles = new boolean[gridSize][gridSize]; // Initialiser la grille avec la taille donnée
         getHolder().addCallback(this);
         thread = new GameThread(getHolder(), this);
         setFocusable(true);
 
-        // Initialisation des obstacles (exemple)
-        obstacles[3][4] = true; // Obstacle en (3,4)
-        obstacles[7][8] = true; // Obstacle en (7,8)
-        obstacles[9][9] = true;
+        // Initialisation des obstacles (exemple pour une grille quelconque)
+        if (gridSize >= 10) { // S'assurer que les indices sont valides
+            obstacles[3][4] = true;
+            obstacles[7][8] = true;
+            obstacles[gridSize - 1][gridSize - 1] = true; // Sortie au coin inférieur droit
+        }
 
-        // Calculer la taille des cases en fonction de la taille de l'écran
         calculateCellSize();
     }
 
-    // Calculer la taille des cases pour remplir presque tout l'écran
     private void calculateCellSize() {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
-        // Utiliser la plus petite dimension (largeur ou hauteur) pour une grille carrée
-        cellSize = Math.min(screenWidth, screenHeight) / 10; // 10 cases
+        cellSize = Math.min(screenWidth, screenHeight) / gridSize; // Ajuster la taille des cases
     }
 
     @Override
@@ -83,7 +86,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    // Gestion des swipes pour changer la direction
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (direction != Direction.STOPPED) {
@@ -122,7 +124,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         return super.onTouchEvent(event);
     }
 
-    // Logique de déplacement et détection des obstacles
     public void update() {
         if (direction == Direction.STOPPED) {
             return;
@@ -152,7 +153,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 break;
         }
 
-        if (nextX < 0 || nextX >= 10 || nextY < 0 || nextY >= 10) {
+        // Vérifier les limites avec la taille de grille dynamique
+        if (nextX < 0 || nextX >= gridSize || nextY < 0 || nextY >= gridSize) {
             direction = Direction.STOPPED;
             return;
         }
@@ -166,24 +168,29 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         playerY = nextY;
     }
 
-    // Affichage adapté à la taille de l'écran
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
         if (canvas != null) {
-            canvas.drawColor(Color.WHITE);
+            // Dessiner l'image de fond en l'étirant pour couvrir toute la grille
+            if (backgroundImage != null) {
+                int totalSize = cellSize * gridSize; // Taille totale de la grille
+                Rect destRect = new Rect(0, 0, totalSize, totalSize);
+                canvas.drawBitmap(backgroundImage, null, destRect, null);
+            } else {
+                canvas.drawColor(Color.WHITE);
+            }
+
             Paint paint = new Paint();
             paint.setColor(Color.rgb(250, 0, 0));
 
-            // Dessiner le joueur avec la taille dynamique
             int pixelX = playerX * cellSize;
             int pixelY = playerY * cellSize;
             canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
 
-            // Dessiner les obstacles
             paint.setColor(Color.BLACK);
-            for (int i = 0; i < 10; i++) {
-                for (int j = 0; j < 10; j++) {
+            for (int i = 0; i < gridSize; i++) {
+                for (int j = 0; j < gridSize; j++) {
                     if (obstacles[i][j]) {
                         canvas.drawRect(i * cellSize, j * cellSize,
                                 i * cellSize + cellSize, j * cellSize + cellSize, paint);

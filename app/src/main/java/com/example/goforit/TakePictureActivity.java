@@ -19,6 +19,7 @@ public class TakePictureActivity extends Activity {
     private ImageView imageView;
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     private Button btnStartTheGame;
+    private Bitmap imageBitmap; // Stocker la photo pour la passer à GameView
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,13 +27,22 @@ public class TakePictureActivity extends Activity {
         setContentView(R.layout.activity_take_picture);
 
         btnStartTheGame = findViewById(R.id.btnStartTheGame);
+        btnStartTheGame.setText("Commencer"); // Renommer le bouton
         btnStartTheGame.setVisibility(View.GONE);
 
         imageView = findViewById(R.id.imageView);
-        imageView.setVisibility(View.GONE);;
+        imageView.setVisibility(View.GONE);
         Button btnTakePhoto = findViewById(R.id.btnTakePhoto);
 
         btnTakePhoto.setOnClickListener(v -> checkCameraPermission());
+
+        // Ajouter le listener pour lancer GameView
+        btnStartTheGame.setOnClickListener(v -> {
+            Intent intent = new Intent(TakePictureActivity.this, GameActivity.class); // Nouvelle activité pour GameView
+            intent.putExtra("background_image", imageBitmap); // Passer l'image
+            startActivity(intent);
+            finish(); // Terminer TakePictureActivity
+        });
     }
 
     private void checkCameraPermission() {
@@ -57,7 +67,7 @@ public class TakePictureActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            imageBitmap = (Bitmap) extras.get("data"); // Stocker l'image
             imageView.setVisibility(View.VISIBLE);
             imageView.setImageBitmap(imageBitmap);
             btnStartTheGame.setVisibility(View.VISIBLE);
