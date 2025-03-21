@@ -44,6 +44,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private Bitmap backgroundImage;
     private int level;
     private int rotationAngle = 0;
+    private Maze maze;
 
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
@@ -51,6 +52,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     public GameView(Context context, int valeur_y, Bitmap backgroundImage, int gridSize) {
         super(context);
+        maze = new Maze();
+        maze.generateMaze(10, 8);
         this.valeur_y = valeur_y;
         this.backgroundImage = backgroundImage;
         this.gridSize = gridSize;
@@ -60,11 +63,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         thread = new GameThread(getHolder(), this);
         setFocusable(true);
 
-        if (gridSize >= 10) {
-            obstacles[3][4] = true;
-            obstacles[7][8] = true;
-            obstacles[gridSize - 1][gridSize - 1] = true;
-        }
+//        if (gridSize >= 10) {
+//            obstacles[3][4] = true;
+//            obstacles[7][8] = true;
+//            obstacles[gridSize - 1][gridSize - 1] = true;
+//        }
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -98,8 +101,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-    }
+    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int i, int i1, int i2) {}
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
