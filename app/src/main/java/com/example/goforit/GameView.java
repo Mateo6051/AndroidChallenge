@@ -25,6 +25,7 @@ import android.view.SurfaceView;
 import androidx.annotation.NonNull;
 
 import java.util.Random;
+import java.util.Set;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, SensorEventListener {
     private GameThread thread;
@@ -66,6 +67,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     private RectF restartButtonTouchArea;
     private Bitmap restartIcon;
+
+    // Éléments pour le bouton solution
+    private RectF solutionButtonTouchArea;
+    private Bitmap solutionIcon;
+    private boolean showSolution = false;
 
     // Constantes pour l'animation de pulsation
     private static final float PULSE_MIN = 0.95f;
@@ -295,6 +301,40 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
 
             // Reste du code pour les mouvements de balle...
+
+            // Gestion du clic sur le bouton solution
+            if (solutionButtonTouchArea != null && solutionButtonTouchArea.contains(x, y)) {
+                // Activer/désactiver l'affichage de la solution
+                showSolution = !showSolution;
+                return true;
+            }
+
+            // Si le joueur touche l'écran ailleurs, arrêter le mouvement
+            if (direction != Direction.STOPPED) {
+                direction = Direction.STOPPED;
+                return true;
+            } else {
+                // Si le joueur est déjà arrêté, on peut ajouter une logique pour commencer un mouvement
+                // basé sur la position du toucher par rapport à la position du joueur
+                int playerScreenX = offsetX + playerX * cellSize + cellSize / 2;
+                int playerScreenY = offsetY + playerY * cellSize + cellSize / 2;
+
+                // Calculer la direction basée sur l'angle entre la position du joueur et le toucher
+                double angle = Math.toDegrees(Math.atan2(y - playerScreenY, x - playerScreenX));
+
+                // Convertir l'angle en direction
+                if (angle > -45 && angle <= 45) {
+                    direction = Direction.RIGHT;
+                } else if (angle > 45 && angle <= 135) {
+                    direction = Direction.DOWN;
+                } else if (angle > 135 || angle <= -135) {
+                    direction = Direction.LEFT;
+                } else {
+                    direction = Direction.UP;
+                }
+
+                return true;
+            }
         }
         return super.onTouchEvent(event);
     }
@@ -304,6 +344,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         playerY = maze.getStart().y;
         direction = Direction.STOPPED;
         rotationAngle = 0;
+
+        // Ne pas réinitialiser l'affichage de la solution lors du redémarrage
+        // Conserver l'état actuel de showSolution
     }
 
 
@@ -326,6 +369,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         }
 
         Paint paint = new Paint();
+
+        // Dessiner le chemin solution si activé
+        if (showSolution) {
+            drawSolutionPath(canvas);
+        }
 
         for (int i = 0; i < gridSize + 2; i++) {
             for (int j = 0; j < gridSize + 2; j++) {
@@ -352,6 +400,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         canvas.restore();
 
         drawModernRestartButton(canvas);
+        drawSolutionButton(canvas);
     }
 
     /**
@@ -547,4 +596,247 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         }
     }
 
+
+    /**
+     * Dessine les marqueurs du chemin de solution
+     */
+    private void drawSolutionPath(Canvas canvas) {
+        Set<Point> path = maze.getPath();
+        if (path == null || path.isEmpty()) return;
+
+        // Créer un effet visuel pour le chemin - lignes connectant les points
+        Paint linePaint = new Paint();
+        linePaint.setColor(Color.parseColor("#FFD700"));  // Couleur or
+        linePaint.setAlpha(80);  // Très transparent pour les lignes
+        linePaint.setStrokeWidth(cellSize / 8);
+        linePaint.setStrokeCap(Paint.Cap.ROUND);
+        linePaint.setStyle(Paint.Style.STROKE);
+
+        // Dessiner des connexions entre les points adjacents
+        // Pour cela, nous devons déterminer les points adjacents
+        for (Point point : path) {
+            if (maze.isObstacle(point.x, point.y)) continue;
+
+            // Coordonnées du point actuel
+            int x1 = offsetX + point.x * cellSize + cellSize / 2;
+            int y1 = offsetY + point.y * cellSize + cellSize / 2;
+
+            // Vérifier les quatre directions adjacentes
+            Point[] adjacents = {
+                new Point(point.x + 1, point.y),  // Droite
+                new Point(point.x - 1, point.y),  // Gauche
+                new Point(point.x, point.y + 1),  // Bas
+                new Point(point.x, point.y - 1)   // Haut
+            };
+
+            for (Point adj : adjacents) {
+                // Si le point adjacent fait partie du chemin, dessiner une ligne
+                if (path.contains(adj) && !maze.isObstacle(adj.x, adj.y)) {
+                    int x2 = offsetX + adj.x * cellSize + cellSize / 2;
+                    int y2 = offsetY + adj.y * cellSize + cellSize / 2;
+
+                    canvas.drawLine(x1, y1, x2, y2, linePaint);
+                }
+            }
+        }
+
+        // Dessiner les marqueurs pour chaque point du chemin
+        Paint circlePaint = new Paint();
+        circlePaint.setColor(Color.parseColor("#FFD700")); // Couleur or
+        circlePaint.setAlpha(160); // Semi-transparent
+        circlePaint.setStyle(Paint.Style.FILL);
+
+        int markerSize = cellSize / 4;
+
+        for (Point point : path) {
+            // Ne pas dessiner de marqueur pour les obstacles (au cas où)
+            if (maze.isObstacle(point.x, point.y)) continue;
+
+            int pixelX = offsetX + point.x * cellSize + cellSize / 2;
+            int pixelY = offsetY + point.y * cellSize + cellSize / 2;
+
+            // Effet de halo autour du marqueur
+            Paint haloPaint = new Paint();
+            haloPaint.setColor(Color.parseColor("#FFD700"));
+            haloPaint.setAlpha(40);
+            haloPaint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(pixelX, pixelY, markerSize * 1.5f, haloPaint);
+
+            // Dessiner un cercle pour chaque point du chemin
+            canvas.drawCircle(pixelX, pixelY, markerSize/2, circlePaint);
+
+            // Point central blanc pour meilleure visibilité
+            Paint centerPaint = new Paint();
+            centerPaint.setColor(Color.WHITE);
+            centerPaint.setAlpha(180);
+            centerPaint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(pixelX, pixelY, markerSize/5, centerPaint);
+        }
+
+        // Mettre en évidence la position actuelle du joueur
+        int playerPixelX = offsetX + playerX * cellSize + cellSize / 2;
+        int playerPixelY = offsetY + playerY * cellSize + cellSize / 2;
+
+        Paint playerMarkerPaint = new Paint();
+        playerMarkerPaint.setColor(Color.parseColor("#4ADE80"));  // Vert vif
+        playerMarkerPaint.setStyle(Paint.Style.STROKE);
+        playerMarkerPaint.setStrokeWidth(3);
+        canvas.drawCircle(playerPixelX, playerPixelY, markerSize, playerMarkerPaint);
+
+        // Effet spécial pour le point d'arrivée
+        Point goal = maze.getGoal();
+        if (goal != null) {
+            int goalX = offsetX + goal.x * cellSize + cellSize / 2;
+            int goalY = offsetY + goal.y * cellSize + cellSize / 2;
+
+            // Effet de pulse sur le point d'arrivée
+            float pulseFactor = 1.0f + (float) Math.sin(System.currentTimeMillis() / 300.0) * 0.2f;
+
+            Paint goalPaint = new Paint();
+            goalPaint.setColor(Color.parseColor("#FFD700"));
+            goalPaint.setStyle(Paint.Style.STROKE);
+            goalPaint.setStrokeWidth(4);
+            goalPaint.setAlpha(200);
+
+            canvas.drawCircle(goalX, goalY, markerSize * 1.5f * pulseFactor, goalPaint);
+
+            // Texte "SORTIE" près du point d'arrivée
+            Paint exitTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            exitTextPaint.setColor(Color.parseColor("#FFD700"));
+            exitTextPaint.setTextSize(cellSize / 3);
+            exitTextPaint.setTextAlign(Paint.Align.CENTER);
+            exitTextPaint.setShadowLayer(3, 1, 1, Color.BLACK);
+
+            // Calculer la position du texte en fonction de l'emplacement de la sortie
+            float textX = goalX;
+            float textY;
+
+            // Position du texte selon la position de la sortie
+            if (goal.y == 0) {
+                textY = goalY - cellSize / 2; // Sortie en haut
+            } else if (goal.y >= gridSize) {
+                textY = goalY + cellSize; // Sortie en bas
+            } else if (goal.x == 0) {
+                textY = goalY - cellSize / 2; // Sortie à gauche
+                textX = goalX + cellSize / 2;
+            } else {
+                textY = goalY - cellSize / 2; // Sortie à droite
+                textX = goalX - cellSize / 2;
+            }
+
+            // Dessiner le texte
+            canvas.drawText("SORTIE", textX, textY, exitTextPaint);
+        }
+    }
+
+    /**
+     * Dessine le bouton de solution
+     */
+    private void drawSolutionButton(Canvas canvas) {
+        // Paramètres du bouton
+        int buttonSize = (int)(cellSize * 1.7f);
+        int margin = cellSize / 2;
+
+        // Position du bouton dans le coin inférieur gauche (opposé au bouton restart)
+        int centerX = buttonSize/2 + margin;
+        int centerY = canvas.getHeight() - buttonSize/2 - margin * 2;
+
+        // Animation de pulsation simple
+        float pulseFactor = 1.0f + (float) Math.sin(System.currentTimeMillis() / 800.0) * 0.07f;
+        int pulsingButtonSize = (int)(buttonSize * pulseFactor);
+
+        // Position du texte sous le bouton
+        float textY = centerY + buttonSize/2 + cellSize/2;
+
+        // Zone tactile
+        solutionButtonTouchArea = new RectF(
+            centerX - buttonSize/2 - margin/3,
+            centerY - buttonSize/2 - margin/3,
+            centerX + buttonSize/2 + margin/3,
+            textY + cellSize/3
+        );
+
+        // Ombre pour effet de profondeur
+        Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        shadowPaint.setColor(Color.BLACK);
+        shadowPaint.setAlpha(50);
+        canvas.drawCircle(centerX + 3, centerY + 3, pulsingButtonSize/2 + 2, shadowPaint);
+
+        // Fond du bouton avec dégradé
+        Paint buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        // Couleur du bouton différente selon l'état (activé/désactivé)
+        int[] colors;
+        if (showSolution) {
+            // Couleur dorée quand activé
+            colors = new int[] {
+                Color.parseColor("#FFD700"),  // Or clair
+                Color.parseColor("#FFC125"),  // Or moyen
+                Color.parseColor("#DAA520")   // Or foncé
+            };
+        } else {
+            // Couleur verte quand désactivé
+            colors = new int[] {
+                Color.parseColor("#4ADE80"),  // Vert clair
+                Color.parseColor("#22C55E"),  // Vert moyen
+                Color.parseColor("#16A34A")   // Vert foncé
+            };
+        }
+
+        // Dégradé radial
+        RadialGradient gradient = new RadialGradient(
+            centerX - pulsingButtonSize/5,
+            centerY - pulsingButtonSize/5,
+            pulsingButtonSize,
+            colors,
+            new float[] {0.3f, 0.6f, 1.0f},
+            Shader.TileMode.CLAMP
+        );
+
+        buttonPaint.setShader(gradient);
+        canvas.drawCircle(centerX, centerY, pulsingButtonSize/2, buttonPaint);
+
+        // Contour léger
+        Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        strokePaint.setStyle(Paint.Style.STROKE);
+        strokePaint.setStrokeWidth(2);
+        strokePaint.setColor(Color.WHITE);
+        strokePaint.setAlpha(100);
+        canvas.drawCircle(centerX, centerY, pulsingButtonSize/2 - 1, strokePaint);
+
+        // Dessiner l'icône
+        int iconSize = (int)(pulsingButtonSize * 0.7f);
+
+        if (solutionIcon == null || solutionIcon.getWidth() != iconSize) {
+            try {
+                Drawable drawable = getContext().getDrawable(R.drawable.solution_icon);
+                if (drawable != null) {
+                    Bitmap bitmap = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888);
+                    Canvas iconCanvas = new Canvas(bitmap);
+                    drawable.setBounds(0, 0, iconSize, iconSize);
+                    drawable.draw(iconCanvas);
+                    solutionIcon = bitmap;
+                }
+            } catch (Exception e) {
+                solutionIcon = null;
+            }
+        }
+
+        if (solutionIcon != null) {
+            Paint iconPaint = new Paint();
+            float iconX = centerX - iconSize/2;
+            float iconY = centerY - iconSize/2;
+            canvas.drawBitmap(solutionIcon, iconX, iconY, iconPaint);
+        }
+
+        // Texte "SOLUTION"
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(cellSize/3);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setShadowLayer(3, 1, 1, Color.BLACK);
+
+        // Dessiner le texte
+        canvas.drawText(showSolution ? "CACHER" : "SOLUTION", centerX, textY, textPaint);
+    }
 }
