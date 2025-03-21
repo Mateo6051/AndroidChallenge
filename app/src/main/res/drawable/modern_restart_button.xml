@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#33FFFFFF">
+    <item>
+        <shape android:shape="oval">
+            <!-- Dégradé principal avec des couleurs élégantes et modernes -->
+            <gradient
+                android:type="radial"
+                android:gradientRadius="30dp"
+                android:startColor="#7F5AD5"
+                android:centerColor="#6745C4"
+                android:endColor="#4A2B9C"
+                android:centerX="0.6"
+                android:centerY="0.4" />
+                
+            <!-- Effet d'élévation subtil -->
+            <padding
+                android:left="1dp"
+                android:top="1dp"
+                android:right="1dp"
+                android:bottom="1dp" />
+        </shape>
+    </item>
+    
+    <!-- Contour brillant pour effet néomorphique -->
+    <item android:id="@android:id/mask">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+            <stroke 
+                android:color="#33FFFFFF"
+                android:width="1.5dp" />
+        </shape>
+    </item>
+</ripple> 
