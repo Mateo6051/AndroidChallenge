@@ -3,13 +3,13 @@ package com.example.goforit;
 import android.app.Activity;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.view.MotionEvent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -36,11 +36,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private static final long DIRECTION_CHANGE_COOLDOWN = 500;
     private float[] lastAccValues = new float[3];
     private static final float ALPHA = 0.8f;
-    // Contrôle de la vitesse
     private int moveCounter = 0;
     private static final int MOVE_DELAY = 5;
-
     private int cellSize;
+    private Bitmap stoneBitmapStone;
+    private Bitmap stoneBitmapBall;
+
     private int gridSize;
     private Bitmap backgroundImage;
     private int level;
@@ -48,8 +49,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
-
-    public GameView(Context context, int valeur_y, Bitmap backgroundImage, int gridSize) {
+    public GameView(Context context, int valeur_y) {
         super(context);
         this.valeur_y = valeur_y;
         this.backgroundImage = backgroundImage;
@@ -86,6 +86,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
+        stoneBitmapStone = BitmapFactory.decodeResource(getResources(), R.drawable.stone_icon);
+        stoneBitmapBall = BitmapFactory.decodeResource(getResources(), R.drawable.red_ball);
+        int newWidth = cellSize;
+        int newHeight = cellSize;
+        stoneBitmapStone = Bitmap.createScaledBitmap(stoneBitmapStone, newWidth, newHeight, true);
+        stoneBitmapBall = Bitmap.createScaledBitmap(stoneBitmapBall, newWidth, newHeight, true);
+
         thread.setRunning(true);
         thread.start();
     }
@@ -139,7 +146,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
 
             Direction newDirection = Direction.STOPPED;
-
+            
             if (Math.abs(x) > Math.abs(y)) {
                 if (Math.abs(x) > tiltThreshold) {
                     newDirection = (x > 0) ? Direction.LEFT : Direction.RIGHT;
@@ -233,14 +240,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
             int pixelX = playerX * cellSize;
             int pixelY = playerY * cellSize;
-            canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
+
+            canvas.drawBitmap(stoneBitmapBall, pixelX, pixelY, null);
 
             paint.setColor(Color.BLACK);
             for (int i = 0; i < gridSize; i++) {
                 for (int j = 0; j < gridSize; j++) {
                     if (obstacles[i][j]) {
-                        canvas.drawRect(i * cellSize, j * cellSize,
-                                i * cellSize + cellSize, j * cellSize + cellSize, paint);
+                        float left = i * cellSize;
+                        float top = j * cellSize;
+                        canvas.drawBitmap(stoneBitmapStone, left, top, null);
                     }
                 }
             }
