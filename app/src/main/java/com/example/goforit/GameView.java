@@ -50,6 +50,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private Rect restartButton;
     private Paint buttonPaint;
     private Paint textPaint;
+    private Rect restartButtonRect;
+    private Rect solutionButtonRect;
+    private boolean showSolution = false;
+
 
 
     private enum Direction {
@@ -209,22 +213,29 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (restartButton.contains((int) event.getX(), (int) event.getY())) {
-                restartGame();
+            int x = (int) event.getX();
+            int y = (int) event.getY();
+
+            if (restartButtonRect.contains(x, y)) {
+                playerX = maze.getStart().x;
+                playerY = maze.getStart().y;
+                direction = Direction.STOPPED;
+                return true;
+            }
+
+            if (solutionButtonRect.contains(x, y)) {
+                showSolution = !showSolution;
                 return true;
             }
         }
         return super.onTouchEvent(event);
     }
-
     private void restartGame() {
         playerX = maze.getStart().x;
         playerY = maze.getStart().y;
         direction = Direction.STOPPED;
         rotationAngle = 0;
     }
-
-
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {}
@@ -245,17 +256,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
         Paint paint = new Paint();
 
+        if (showSolution) {
+            paint.setColor(Color.BLUE);
+            for (Point p : maze.getPath()) {
+                int px = offsetX + (p.x) * cellSize;
+                int py = offsetY + (p.y) * cellSize;
+                canvas.drawRect(px, py, px + cellSize, py + cellSize, paint);
+            }
+        }
+
         for (int i = 0; i < gridSize + 2; i++) {
             for (int j = 0; j < gridSize + 2; j++) {
                 int pixelX = offsetX + i * cellSize;
                 int pixelY = offsetY + j * cellSize;
 
                 if (maze.isGoal(i, j)) {
-                    // Dessiner la sortie en vert
                     paint.setColor(Color.GREEN);
                     canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
                 } else if (maze.isObstacle(i, j)) {
-                    // Dessiner les obstacles avec Bitmap
                     canvas.drawBitmap(stoneBitmapStone, pixelX, pixelY, null);
                 }
             }
@@ -263,20 +281,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
         int pixelX = offsetX + playerX * cellSize;
         int pixelY = offsetY + playerY * cellSize;
-
         canvas.save();
         canvas.rotate(rotationAngle, pixelX + cellSize / 2, pixelY + cellSize / 2);
         canvas.drawBitmap(stoneBitmapBall, pixelX, pixelY, null);
         canvas.restore();
 
-        if (restartButton == null) {
+        if (restartButtonRect == null) {
             int buttonWidth = cellSize * 3;
             int buttonHeight = cellSize;
-            restartButton = new Rect(offsetX + cellSize * (gridSize - 2), offsetY - buttonHeight - 10,
-                    offsetX + cellSize * (gridSize - 2) + buttonWidth, offsetY - 10);
+            int padding = cellSize / 2;
+
+            restartButtonRect = new Rect(offsetX, offsetY + totalSize + padding,
+                    offsetX + buttonWidth, offsetY + totalSize + padding + buttonHeight);
+
+            solutionButtonRect = new Rect(restartButtonRect.right + padding, restartButtonRect.top,
+                    restartButtonRect.right + padding + buttonWidth, restartButtonRect.bottom);
 
             buttonPaint = new Paint();
-            buttonPaint.setColor(Color.GRAY);
+            buttonPaint.setColor(Color.DKGRAY);
             buttonPaint.setStyle(Paint.Style.FILL);
 
             textPaint = new Paint();
@@ -285,8 +307,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             textPaint.setTextAlign(Paint.Align.CENTER);
         }
 
-        canvas.drawRect(restartButton, buttonPaint);
-        canvas.drawText("Restart", restartButton.centerX(), restartButton.centerY() + (cellSize / 4), textPaint);
+        canvas.drawRect(restartButtonRect, buttonPaint);
+        canvas.drawText("Restart", restartButtonRect.centerX(), restartButtonRect.centerY() + cellSize / 4, textPaint);
 
+        canvas.drawRect(solutionButtonRect, buttonPaint);
+        canvas.drawText("Solution", solutionButtonRect.centerX(), solutionButtonRect.centerY() + cellSize / 4, textPaint);
     }
+
 }
