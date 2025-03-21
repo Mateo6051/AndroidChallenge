@@ -23,12 +23,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private boolean[][] obstacles = new boolean[10][10];
     private Direction direction = Direction.STOPPED;
     private SensorManager sensorManager;
-    private Sensor gyroscope;
-    private float tiltThreshold = 1.5f;
-    private float neutralZone = 0.8f;
+    private Sensor accelerometer;
+    private float tiltThreshold = 2.0f;
+    private float neutralZone = 1.0f;
     private long lastDirectionChange = 0;
     private static final long DIRECTION_CHANGE_COOLDOWN = 500;
-    private float[] lastGyroValues = new float[2];
+    private float[] lastAccValues = new float[3];
     private static final float ALPHA = 0.8f;
     private int moveCounter = 0;
     private static final int MOVE_DELAY = 5;
@@ -48,12 +48,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         obstacles[9][9] = true;
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        if (gyroscope == null) {
-            Log.e(TAG, "Gyroscope non disponible sur cet appareil");
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if (accelerometer == null) {
+            Log.e(TAG, "Accéléromètre non disponible sur cet appareil");
         } else {
-            Log.d(TAG, "Gyroscope initialisé avec succès");
-            sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
+            Log.d(TAG, "Accéléromètre initialisé avec succès");
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
         }
 
         calculateCellSize();
@@ -90,21 +90,27 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         }
     }
 
-    private float[] filterGyroValues(float[] values) {
-        lastGyroValues[0] = ALPHA * lastGyroValues[0] + (1 - ALPHA) * values[0];
-        lastGyroValues[1] = ALPHA * lastGyroValues[1] + (1 - ALPHA) * values[1];
-        return lastGyroValues;
+    private float[] filterAccValues(float[] values) {
+        lastAccValues[0] = ALPHA * lastAccValues[0] + (1 - ALPHA) * values[0];
+        lastAccValues[1] = ALPHA * lastAccValues[1] + (1 - ALPHA) * values[1];
+        lastAccValues[2] = ALPHA * lastAccValues[2] + (1 - ALPHA) * values[2];
+        return lastAccValues;
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE && direction == Direction.STOPPED) {
-            float[] filteredValues = filterGyroValues(event.values);
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && direction == Direction.STOPPED) {
+            float[] filteredValues = filterAccValues(event.values);
             float x = filteredValues[0];
             float y = filteredValues[1];
+            float z = filteredValues[2];
             long currentTime = System.currentTimeMillis();
 
             if (currentTime - lastDirectionChange < DIRECTION_CHANGE_COOLDOWN) {
+                return;
+            }
+
+            if (z < 6.0f) {
                 return;
             }
 
@@ -114,18 +120,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
             Direction newDirection = Direction.STOPPED;
             
-            if (Math.abs(x) > tiltThreshold || Math.abs(y) > tiltThreshold) {
-                if (Math.abs(x) > Math.abs(y) * 1.2) { // 20% plus forte
-                    newDirection = (x < 0) ? Direction.UP : Direction.DOWN;
-                } else if (Math.abs(y) > Math.abs(x) * 1.2) { // 20% plus forte
-                    newDirection = (y < 0) ? Direction.LEFT : Direction.RIGHT;
+            if (Math.abs(x) > Math.abs(y)) {
+                if (Math.abs(x) > tiltThreshold) {
+                    newDirection = (x > 0) ? Direction.LEFT : Direction.RIGHT;
+                }
+            } else {
+                if (Math.abs(y) > tiltThreshold) {
+                    newDirection = (y > 0) ? Direction.DOWN : Direction.UP;
                 }
             }
 
             if (newDirection != Direction.STOPPED) {
                 direction = newDirection;
                 lastDirectionChange = currentTime;
-                Log.d(TAG, "Nouvelle direction: " + direction);
+                Log.d(TAG, "Nouvelle direction: " + direction + " - acc: x=" + x + ", y=" + y + ", z=" + z);
             }
         }
     }
