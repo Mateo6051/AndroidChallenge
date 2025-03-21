@@ -34,6 +34,7 @@ public class Maze {
 
             int directionChanges = 0;
             Point prevDirection = null;
+            boolean invalidPath = false;
 
             while (directionChanges < maxDirectionChanges) {
                 List<int[]> possibleDirs = new ArrayList<>(Arrays.asList(
@@ -71,10 +72,14 @@ public class Maze {
 
                         Point obstaclePoint = new Point(current.x + dx, current.y + dy);
                         if (obstaclePoint.x > 0 && obstaclePoint.x < size + 1 &&
-                                obstaclePoint.y > 0 && obstaclePoint.y < size + 1 &&
-                                !path.contains(obstaclePoint)) {
+                                obstaclePoint.y > 0 && obstaclePoint.y < size + 1) {
 
-                            obstacles[obstaclePoint.x][obstaclePoint.y] = true;
+                            if (path.contains(obstaclePoint)) {
+                                invalidPath = true;
+                                break;
+                            } else {
+                                obstacles[obstaclePoint.x][obstaclePoint.y] = true;
+                            }
                         }
 
                         moved = true;
@@ -82,20 +87,19 @@ public class Maze {
                         directionChanges++;
                         break;
                     }
-
                 }
 
+                if (invalidPath) break;
                 if (!moved) break;
             }
 
-            if (directionChanges < maxDirectionChanges) continue;
+            if (invalidPath || directionChanges < maxDirectionChanges) continue;
 
             placeExit(current, prevDirection);
             placeExtraObstacles();
             break;
         }
     }
-
 
     private int getMaxDistance(Point current, int dx, int dy) {
         int distance = 0;

@@ -24,6 +24,8 @@ import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 
+import java.util.Random;
+
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, SensorEventListener {
     private GameThread thread;
     private int playerX;
@@ -83,9 +85,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private float rippleCenterX = 0;
     private float rippleCenterY = 0;
     private static final long RIPPLE_DURATION = 400; // durée en millisecondes
+    private MediaPlayer moveSoundPlayer;
 
-    private MediaPlayer moveSound;
-    private MediaPlayer victorySound;
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
@@ -113,8 +114,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         }
 
         calculateCellSize();
-        moveSound = MediaPlayer.create(context, R.raw.move_sound);
-        victorySound = MediaPlayer.create(context, R.raw.victory_sound);
     }
 
     private void calculateCellSize() {
@@ -128,13 +127,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         offsetY = (screenHeight - totalSize) / 2;
     }
 
+    private boolean isSoundPlaying = false;
+
     public void update() {
-        moveSound.start();
-//        if (!isBallMoving()) {
-//            moveSound.stop();
-//            moveSound.release();
-//            moveSound = null;
-//        }
         if (direction != Direction.STOPPED) {
             moveCounter++;
             if (moveCounter >= MOVE_DELAY) {
@@ -143,18 +138,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 int nextY = playerY;
 
                 switch (direction) {
-                    case UP:
-                        nextY--;
-                        break;
-                    case DOWN:
-                        nextY++;
-                        break;
-                    case LEFT:
-                        nextX--;
-                        break;
-                    case RIGHT:
-                        nextX++;
-                        break;
+                    case UP: nextY--; break;
+                    case DOWN: nextY++; break;
+                    case LEFT: nextX--; break;
+                    case RIGHT: nextX++; break;
                 }
 
                 if (nextX < 0 || nextX >= gridSize + 2 || nextY < 0 || nextY >= gridSize + 2 || maze.isObstacle(nextX, nextY)) {
@@ -162,7 +149,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 } else {
                     playerX = nextX;
                     playerY = nextY;
-                    lastMoveDirection = direction;  // ✅ Store last valid direction
+                    lastMoveDirection = direction;
 
                     if (maze.isGoal(playerX, playerY)) {
                         direction = Direction.STOPPED;
@@ -176,7 +163,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
         }
 
-        // Smooth position interpolation towards target cell
         float targetX = playerX * cellSize;
         float targetY = playerY * cellSize;
 
@@ -192,31 +178,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             drawY = targetY;
         }
 
-        // Smooth rotation based on last valid direction (avoids flip/midway change)
         if (direction != Direction.STOPPED || isBallMoving()) {
             float perFrameRotationSpeed = 30.0f;
             Direction rotationDirection = (direction != Direction.STOPPED) ? direction : lastMoveDirection;
 
             switch (rotationDirection) {
-                case LEFT:
-                    currentRotationAngle -= perFrameRotationSpeed;
-                    break;
-                case RIGHT:
-                    currentRotationAngle += perFrameRotationSpeed;
-                    break;
-                case UP:
-                    currentRotationAngle -= perFrameRotationSpeed;
-                    break;
-                case DOWN:
-                    currentRotationAngle += perFrameRotationSpeed;
-                    break;
+                case LEFT: currentRotationAngle -= perFrameRotationSpeed; break;
+                case RIGHT: currentRotationAngle += perFrameRotationSpeed; break;
+                case UP: currentRotationAngle -= perFrameRotationSpeed; break;
+                case DOWN: currentRotationAngle += perFrameRotationSpeed; break;
             }
         }
 
-        // Normalize rotation angle
         if (currentRotationAngle >= 360) currentRotationAngle -= 360;
         if (currentRotationAngle < 0) currentRotationAngle += 360;
     }
+
 
 
     @Override
@@ -241,6 +218,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
         sensorManager.unregisterListener(this);
+        if (moveSoundPlayer != null) {
+            moveSoundPlayer.release();
+            moveSoundPlayer = null;
+        }
         boolean retry = true;
         while (retry) {
             try {
@@ -287,6 +268,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             if (newDirection != Direction.STOPPED) {
                 direction = newDirection;
                 lastDirectionChange = currentTime;
+
+                if (moveSoundPlayer != null) {
+                    moveSoundPlayer.release();
+                }
+                int randomIndex = new Random().nextInt(3);
+                moveSoundPlayer = MediaPlayer.create(getContext(), getMoveSoundResId(randomIndex));
+                moveSoundPlayer.start();
             }
         }
     }
@@ -549,4 +537,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         float targetY = playerY * cellSize;
         return Math.abs(drawX - targetX) > 1 || Math.abs(drawY - targetY) > 1;
     }
+
+    private int getMoveSoundResId(int index) {
+        switch (index) {
+            case 0: return R.raw.move_sound_1;
+            case 1: return R.raw.move_sound_2;
+            case 2: return R.raw.move_sound_3;
+            default: return R.raw.move_sound_1;
+        }
+    }
+
 }
