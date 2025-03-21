@@ -1,6 +1,8 @@
 package com.example.goforit;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -33,9 +35,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private int moveCounter = 0;
     private static final int MOVE_DELAY = 5;
     private int cellSize;
+    private Bitmap stoneBitmapStone;
+    private Bitmap stoneBitmapBall;
+
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
+
     public GameView(Context context, int valeur_y) {
         super(context);
         this.valeur_y = valeur_y;
@@ -67,6 +73,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
+        stoneBitmapStone = BitmapFactory.decodeResource(getResources(), R.drawable.stone_icon);
+        stoneBitmapBall = BitmapFactory.decodeResource(getResources(), R.drawable.red_ball);
+        int newWidth = cellSize;
+        int newHeight = cellSize;
+        stoneBitmapStone = Bitmap.createScaledBitmap(stoneBitmapStone, newWidth, newHeight, true);
+        stoneBitmapBall = Bitmap.createScaledBitmap(stoneBitmapBall, newWidth, newHeight, true);
+
         thread.setRunning(true);
         thread.start();
     }
@@ -119,7 +132,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             }
 
             Direction newDirection = Direction.STOPPED;
-            
+
             if (Math.abs(x) > Math.abs(y)) {
                 if (Math.abs(x) > tiltThreshold) {
                     newDirection = (x > 0) ? Direction.LEFT : Direction.RIGHT;
@@ -198,14 +211,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
             int pixelX = playerX * cellSize;
             int pixelY = playerY * cellSize;
-            canvas.drawRect(pixelX, pixelY, pixelX + cellSize, pixelY + cellSize, paint);
+
+            canvas.drawBitmap(stoneBitmapBall, pixelX, pixelY, null);
 
             paint.setColor(Color.BLACK);
             for (int i = 0; i < 10; i++) {
                 for (int j = 0; j < 10; j++) {
                     if (obstacles[i][j]) {
-                        canvas.drawRect(i * cellSize, j * cellSize,
-                                i * cellSize + cellSize, j * cellSize + cellSize, paint);
+                        float left = i * cellSize;
+                        float top = j * cellSize;
+                        canvas.drawBitmap(stoneBitmapStone, left, top, null);
                     }
                 }
             }
