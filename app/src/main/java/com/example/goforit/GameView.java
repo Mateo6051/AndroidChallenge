@@ -13,6 +13,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -36,7 +37,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private int cellSize;
     private Bitmap stoneBitmapStone;
     private Bitmap stoneBitmapBall;
-
     private Bitmap doorBitmap;
     private int gridSize;
     private Bitmap backgroundImage;
@@ -52,6 +52,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private static final float ROTATION_SPEED = 100.0f;
 
     private Direction lastMoveDirection = Direction.STOPPED;
+
+    private Rect restartButton;
+    private Paint buttonPaint;
+    private Paint textPaint;
+
 
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
@@ -242,6 +247,26 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     }
 
     @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (restartButton.contains((int) event.getX(), (int) event.getY())) {
+                restartGame();
+                return true;
+            }
+        }
+        return super.onTouchEvent(event);
+    }
+
+    private void restartGame() {
+        playerX = maze.getStart().x;
+        playerY = maze.getStart().y;
+        direction = Direction.STOPPED;
+        rotationAngle = 0;
+    }
+
+
+
+    @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     @Override
@@ -252,7 +277,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         int totalSize = cellSize * (gridSize + 2);
         Rect destRect = new Rect(offsetX, offsetY, offsetX + totalSize, offsetY + totalSize);
 
-        // Draw background image or white background
         if (backgroundImage != null) {
             canvas.drawBitmap(backgroundImage, null, destRect, null);
         } else {
@@ -261,7 +285,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
         Paint paint = new Paint();
 
-        // Draw obstacles and exit
         for (int i = 0; i < gridSize + 2; i++) {
             for (int j = 0; j < gridSize + 2; j++) {
                 int pixelX = offsetX + i * cellSize;
@@ -285,6 +308,26 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
         canvas.rotate(currentRotationAngle, pixelX + cellSize / 2, pixelY + cellSize / 2);
         canvas.drawBitmap(stoneBitmapBall, pixelX, pixelY, null);
         canvas.restore();
+
+        if (restartButton == null) {
+            int buttonWidth = cellSize * 3;
+            int buttonHeight = cellSize;
+            restartButton = new Rect(offsetX + cellSize * (gridSize - 2), offsetY - buttonHeight - 10,
+                    offsetX + cellSize * (gridSize - 2) + buttonWidth, offsetY - 10);
+
+            buttonPaint = new Paint();
+            buttonPaint.setColor(Color.GRAY);
+            buttonPaint.setStyle(Paint.Style.FILL);
+
+            textPaint = new Paint();
+            textPaint.setColor(Color.WHITE);
+            textPaint.setTextSize(cellSize / 2);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+        }
+
+        canvas.drawRect(restartButton, buttonPaint);
+        canvas.drawText("Restart", restartButton.centerX(), restartButton.centerY() + (cellSize / 4), textPaint);
+
     }
 
     private boolean isBallMoving() {
