@@ -13,14 +13,12 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, SensorEventListener {
-    private static final String TAG = "GameView";
     private GameThread thread;
     private int playerX;
     private int playerY;
@@ -49,9 +47,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
     private int offsetY;
     private float drawX;
     private float drawY;
-    private static final float MOVE_SPEED = 10.0f;
+    private static final float MOVE_SPEED = 20.0f;
     private float currentRotationAngle = 0;
     private static final float ROTATION_SPEED = 100.0f;
+
+    private Direction lastMoveDirection = Direction.STOPPED;
+
     private enum Direction {
         UP, DOWN, LEFT, RIGHT, STOPPED
     }
@@ -112,6 +113,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                 } else {
                     playerX = nextX;
                     playerY = nextY;
+                    lastMoveDirection = direction;  // ✅ Store last valid direction
 
                     if (maze.isGoal(playerX, playerY)) {
                         direction = Direction.STOPPED;
@@ -141,10 +143,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
             drawY = targetY;
         }
 
-        // Smooth rotation continues if moving
+        // Smooth rotation based on last valid direction (avoids flip/midway change)
         if (direction != Direction.STOPPED || isBallMoving()) {
             float perFrameRotationSpeed = 30.0f;
-            switch (direction) {
+            Direction rotationDirection = (direction != Direction.STOPPED) ? direction : lastMoveDirection;
+
+            switch (rotationDirection) {
                 case LEFT:
                     currentRotationAngle -= perFrameRotationSpeed;
                     break;
@@ -156,10 +160,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
                     break;
                 case DOWN:
                     currentRotationAngle += perFrameRotationSpeed;
-                    break;
-                default:
-                    // Optional: continue rotation in the last direction or skip
-                    currentRotationAngle += perFrameRotationSpeed; // for continuous spin
                     break;
             }
         }
@@ -212,7 +212,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Sen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && direction == Direction.STOPPED) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && direction == Direction.STOPPED && !isBallMoving()) {
             float[] filteredValues = filterAccValues(event.values);
             float x = filteredValues[0];
             float y = filteredValues[1];
